@@ -16,6 +16,12 @@ AI 에이전트 기반 1인 기업 통합 플랫폼. GSD로 계획하고, CEO가
 
 ### Active
 
+**Phase 0: 인프라 & 아키텍처 (최우선):**
+- [ ] 사용자 인프라 파악 (AWS/GCP, DB, 메시지큐, CI/CD 등)
+- [ ] 시스템 아키텍처 설계
+- [ ] 기술 스택 확정
+- [ ] 배포 전략 수립
+
 **핵심 통합:**
 - [ ] GSD PLAN.md → Auto-Claude implementation_plan.json 변환기
 - [ ] CEO 라우터: 코딩 작업 → Auto-Claude, 비코딩 → CEO Teams
