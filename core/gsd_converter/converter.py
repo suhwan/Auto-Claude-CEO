@@ -2,15 +2,27 @@
 
 import json
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 from .models import PlanModel, TaskModel
 from .parser import parse_frontmatter, parse_xml_section, parse_tasks
 from .schemas import ImplementationPlan, Subtask
+from .validator import PlanValidator
+from .errors import GSDConverterError, ConversionError
 
 
 class GSDConverter:
     """PLAN.md 파일을 implementation_plan.json으로 변환하는 클래스"""
+
+    def __init__(self, validate: bool = True):
+        """
+        GSDConverter 초기화
+
+        Args:
+            validate: True일 경우 파싱 후 자동으로 검증 수행
+        """
+        self.validate_enabled = validate
+        self.validator = PlanValidator() if validate else None
 
     def parse_plan(self, path: str) -> PlanModel:
         """
@@ -63,6 +75,10 @@ class GSDConverter:
             success_criteria=success_criteria
         )
 
+        # 검증 수행 (옵션)
+        if self.validator:
+            self.validator.validate_or_raise(plan)
+
         return plan
 
     def to_implementation_plan(self, plan: PlanModel) -> ImplementationPlan:
@@ -96,13 +112,13 @@ class GSDConverter:
 
         return ImplementationPlan(spec_id=spec_id, subtasks=subtasks)
 
-    def convert(self, plan_path: str, output_path: str) -> ImplementationPlan:
+    def convert(self, plan_path: str, output_path: Optional[str] = None) -> ImplementationPlan:
         """
         PLAN.md → implementation_plan.json 전체 변환
 
         Args:
             plan_path: 입력 PLAN.md 파일 경로
-            output_path: 출력 JSON 파일 경로
+            output_path: 출력 JSON 파일 경로 (None이면 파일 저장 안 함)
 
         Returns:
             변환된 ImplementationPlan 객체 (파일에도 저장됨)
@@ -110,16 +126,27 @@ class GSDConverter:
         Raises:
             FileNotFoundError: 입력 파일이 존재하지 않는 경우
             ParseError: 파싱 중 오류 발생
+            ValidationError: 검증 실패
+            ConversionError: 예상치 못한 변환 오류
         """
-        # PLAN.md 파싱
-        plan = self.parse_plan(plan_path)
+        try:
+            # PLAN.md 파싱
+            plan = self.parse_plan(plan_path)
 
-        # ImplementationPlan으로 변환
-        impl_plan = self.to_implementation_plan(plan)
+            # ImplementationPlan으로 변환
+            impl_plan = self.to_implementation_plan(plan)
 
-        # JSON 파일로 저장
-        output_file = Path(output_path)
-        output_file.parent.mkdir(parents=True, exist_ok=True)
-        output_file.write_text(impl_plan.to_json(), encoding='utf-8')
+            # JSON 파일로 저장 (output_path가 제공된 경우)
+            if output_path:
+                output_file = Path(output_path)
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+                output_file.write_text(impl_plan.to_json(), encoding='utf-8')
 
-        return impl_plan
+            return impl_plan
+
+        except GSDConverterError:
+            # GSDConverterError 계열 예외는 그대로 재발생
+            raise
+        except Exception as e:
+            # 예상치 못한 예외는 ConversionError로 래핑
+            raise ConversionError(f"Unexpected error during conversion: {e}") from e
