@@ -8,6 +8,8 @@ from .models import (
 )
 from .classifier import TaskClassifier
 from .router import CEORouter
+from .bridge import AutoClaudeBridge
+from .executor import PlanExecutor
 
 __all__ = [
     "TaskType",
@@ -16,4 +18,6 @@ __all__ = [
     "ExecutionResult",
     "TaskClassifier",
     "CEORouter",
+    "AutoClaudeBridge",
+    "PlanExecutor",
 ]
