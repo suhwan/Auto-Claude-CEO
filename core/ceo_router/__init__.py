@@ -6,10 +6,14 @@ from .models import (
     AgentResult,
     ExecutionResult,
 )
+from .classifier import TaskClassifier
+from .router import CEORouter
 
 __all__ = [
     "TaskType",
     "RoutingResult",
     "AgentResult",
     "ExecutionResult",
+    "TaskClassifier",
+    "CEORouter",
 ]
