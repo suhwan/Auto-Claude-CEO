@@ -388,6 +388,10 @@ const browserMockAPI: ElectronAPI = {
         completed_tasks: 0,
         last_sync: null
       }
+    }),
+    getSharedBoard: async () => ({
+      success: true,
+      data: null
     })
   },
 
