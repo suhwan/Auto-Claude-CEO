@@ -119,6 +119,63 @@ export interface GsdProgressInfo {
   current_phase: number;
 }
 
+// LeaderContext types for CEO Dashboard
+export interface GsdGoal {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'primary' | 'secondary' | 'tertiary';
+  status: 'active' | 'achieved' | 'abandoned';
+  phase?: number;
+}
+
+export interface GsdDecision {
+  id: string;
+  title: string;
+  description: string;
+  rationale: string;
+  made_at: string;
+  phase?: number;
+}
+
+export interface GsdPattern {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  occurrences: number;
+}
+
+export interface GsdMistake {
+  id: string;
+  description: string;
+  impact: string;
+  lesson_learned: string;
+  occurred_at: string;
+  phase?: number;
+}
+
+export interface GsdRisk {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  likelihood: 'unlikely' | 'possible' | 'likely' | 'certain';
+  mitigation?: string;
+  status: 'identified' | 'mitigated' | 'occurred' | 'closed';
+}
+
+export interface GsdLeaderContext {
+  project_id: string;
+  phase: number;
+  goals: GsdGoal[];
+  decisions: GsdDecision[];
+  patterns: GsdPattern[];
+  mistakes: GsdMistake[];
+  risks: GsdRisk[];
+  updated_at: string;
+}
+
 // SharedBoard types for CEO Team Kanban
 export interface GsdTeamTask {
   id: string;
@@ -1042,6 +1099,98 @@ Source: ${planPath}
         };
       }),
       created_at: String(data.created_at || new Date().toISOString()),
+      updated_at: String(data.updated_at || new Date().toISOString())
+    };
+  }
+
+  /**
+   * Get LeaderContext data for CEO Dashboard visualization
+   */
+  async getLeaderContext(phase?: number): Promise<GsdLeaderContext | null> {
+    const contextDir = path.join(this.projectPath, '.planning', 'leader_context');
+
+    if (!fs.existsSync(contextDir)) {
+      logger.debug(`LeaderContext directory not found at ${contextDir}`);
+      return null;
+    }
+
+    try {
+      // Find context file
+      const files = fs.readdirSync(contextDir).filter(f => f.endsWith('.json'));
+
+      if (files.length === 0) {
+        logger.debug('No context files found in leader_context directory');
+        return null;
+      }
+
+      // Get latest context file
+      const latestFile = files
+        .map(f => ({ name: f, mtime: fs.statSync(path.join(contextDir, f)).mtime }))
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())[0];
+
+      const content = fs.readFileSync(path.join(contextDir, latestFile.name), 'utf-8');
+      const data = JSON.parse(content);
+
+      return this.transformContextData(data);
+    } catch (error) {
+      logger.error('Failed to load LeaderContext:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Transform raw context data to GsdLeaderContext format
+   */
+  private transformContextData(data: Record<string, unknown>): GsdLeaderContext {
+    const goals = data.goals as Array<Record<string, unknown>> || [];
+    const decisions = data.decisions as Array<Record<string, unknown>> || [];
+    const patterns = data.patterns as Array<Record<string, unknown>> || [];
+    const mistakes = data.mistakes as Array<Record<string, unknown>> || [];
+    const risks = data.risks as Array<Record<string, unknown>> || [];
+
+    return {
+      project_id: String(data.project_id || 'unknown'),
+      phase: Number(data.phase) || 0,
+      goals: goals.map((g) => ({
+        id: String(g.id || ''),
+        title: String(g.title || ''),
+        description: String(g.description || ''),
+        priority: (g.priority as GsdGoal['priority']) || 'secondary',
+        status: (g.status as GsdGoal['status']) || 'active',
+        phase: g.phase ? Number(g.phase) : undefined
+      })),
+      decisions: decisions.map((d) => ({
+        id: String(d.id || ''),
+        title: String(d.title || ''),
+        description: String(d.description || ''),
+        rationale: String(d.rationale || ''),
+        made_at: String(d.made_at || d.created_at || ''),
+        phase: d.phase ? Number(d.phase) : undefined
+      })),
+      patterns: patterns.map((p) => ({
+        id: String(p.id || ''),
+        name: String(p.name || ''),
+        description: String(p.description || ''),
+        category: String(p.category || 'general'),
+        occurrences: Number(p.occurrences) || 1
+      })),
+      mistakes: mistakes.map((m) => ({
+        id: String(m.id || ''),
+        description: String(m.description || ''),
+        impact: String(m.impact || ''),
+        lesson_learned: String(m.lesson_learned || ''),
+        occurred_at: String(m.occurred_at || m.created_at || ''),
+        phase: m.phase ? Number(m.phase) : undefined
+      })),
+      risks: risks.map((r) => ({
+        id: String(r.id || ''),
+        title: String(r.title || ''),
+        description: String(r.description || ''),
+        severity: (r.severity as GsdRisk['severity']) || 'medium',
+        likelihood: (r.likelihood as GsdRisk['likelihood']) || 'possible',
+        mitigation: r.mitigation ? String(r.mitigation) : undefined,
+        status: (r.status as GsdRisk['status']) || 'identified'
+      })),
       updated_at: String(data.updated_at || new Date().toISOString())
     };
   }
