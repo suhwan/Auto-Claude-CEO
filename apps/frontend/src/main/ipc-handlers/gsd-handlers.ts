@@ -222,5 +222,48 @@ export function setupGsdHandlers(): void {
     }
   );
 
+  /**
+   * Get pending verifications for manual UAT
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_PENDING_VERIFICATIONS,
+    async (_event: IpcMainInvokeEvent, projectPath: string): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getPendingVerifications', { projectPath });
+        const gsdService = getGsdService(projectPath);
+        const verifications = await gsdService.getPendingVerifications();
+        return { success: true, data: verifications };
+      } catch (error) {
+        logger.error('gsd:getPendingVerifications failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Submit verification result (approve/reject)
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_SUBMIT_VERIFICATION,
+    async (
+      _event: IpcMainInvokeEvent,
+      projectPath: string,
+      planId: string,
+      approved: boolean,
+      feedback?: string,
+      checklist?: Array<{ id: string; description: string; checked: boolean }>
+    ): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:submitVerification', { projectPath, planId, approved });
+        const gsdService = getGsdService(projectPath);
+        const result = await gsdService.submitVerification(planId, approved, feedback, checklist);
+        return { success: result.success, error: result.error };
+      } catch (error) {
+        logger.error('gsd:submitVerification failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
   logger.info('[GSD] IPC handlers registered');
 }

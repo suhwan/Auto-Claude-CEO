@@ -270,6 +270,34 @@ export interface GsdLeaderContext {
 }
 
 /**
+ * Verification status for manual UAT
+ */
+export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'not_required';
+
+/**
+ * Verification checklist item
+ */
+export interface GsdVerificationItem {
+  id: string;
+  description: string;
+  checked: boolean;
+}
+
+/**
+ * Plan verification info for manual UAT
+ */
+export interface GsdPlanVerification {
+  plan_id: string;
+  plan_name: string;
+  phase: number;
+  auto_qa_passed: boolean;
+  verification_status: VerificationStatus;
+  checklist: GsdVerificationItem[];
+  feedback?: string;
+  verified_at?: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -284,6 +312,14 @@ export interface GsdAPI {
   getSyncStatus: (projectPath: string) => Promise<IPCResult<GsdSyncStatus>>;
   getSharedBoard: (projectPath: string, phase?: number) => Promise<IPCResult<GsdSharedBoard | null>>;
   getLeaderContext: (projectPath: string, phase?: number) => Promise<IPCResult<GsdLeaderContext | null>>;
+  getPendingVerifications: (projectPath: string) => Promise<IPCResult<GsdPlanVerification[]>>;
+  submitVerification: (
+    projectPath: string,
+    planId: string,
+    approved: boolean,
+    feedback?: string,
+    checklist?: GsdVerificationItem[]
+  ) => Promise<IPCResult<void>>;
 }
 
 /**
@@ -321,5 +357,17 @@ export const createGsdAPI = (): GsdAPI => ({
     invokeIpc(IPC_CHANNELS.GSD_GET_SHARED_BOARD, projectPath, phase),
 
   getLeaderContext: (projectPath: string, phase?: number): Promise<IPCResult<GsdLeaderContext | null>> =>
-    invokeIpc(IPC_CHANNELS.GSD_GET_LEADER_CONTEXT, projectPath, phase)
+    invokeIpc(IPC_CHANNELS.GSD_GET_LEADER_CONTEXT, projectPath, phase),
+
+  getPendingVerifications: (projectPath: string): Promise<IPCResult<GsdPlanVerification[]>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_PENDING_VERIFICATIONS, projectPath),
+
+  submitVerification: (
+    projectPath: string,
+    planId: string,
+    approved: boolean,
+    feedback?: string,
+    checklist?: GsdVerificationItem[]
+  ): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_SUBMIT_VERIFICATION, projectPath, planId, approved, feedback, checklist)
 });
