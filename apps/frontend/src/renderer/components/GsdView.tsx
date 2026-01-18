@@ -19,6 +19,7 @@ import type {
   GsdStateInfo,
   GsdPlanDetail
 } from '../../preload/api/modules/gsd-api';
+import { TimelineView, ProgressRing } from './gsd';
 
 interface GsdViewProps {
   projectPath: string;
@@ -232,9 +233,9 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header with progress */}
+      {/* Header with progress visualization */}
       <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('navigation:gsd.title')}</h2>
           <Button
             variant="ghost"
@@ -245,16 +246,61 @@ export function GsdView({ projectPath }: GsdViewProps) {
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <Progress value={roadmap.progress_percent} className="flex-1" />
-          <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
-            {roadmap.progress_percent}%
-          </span>
+
+        {/* Progress Summary Row */}
+        <div className="flex items-center gap-6 mb-4">
+          {/* Progress Ring */}
+          <ProgressRing progress={roadmap.progress_percent} size={80}>
+            <div className="text-center">
+              <span className="text-xl font-bold">{roadmap.progress_percent}%</span>
+              <div className="text-[10px] text-muted-foreground">
+                {roadmap.phases.filter(p => p.status === 'complete').length}/{roadmap.total_phases}
+              </div>
+            </div>
+          </ProgressRing>
+
+          {/* Stats Grid */}
+          <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-2xl font-bold text-green-600">
+                {roadmap.phases.filter(p => p.status === 'complete').length}
+              </div>
+              <div className="text-xs text-muted-foreground">{t('common:labels.complete')}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">
+                {roadmap.phases.filter(p => p.status === 'in_progress').length}
+              </div>
+              <div className="text-xs text-muted-foreground">{t('common:labels.inProgress')}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-gray-400">
+                {roadmap.phases.filter(p => p.status === 'not_started').length}
+              </div>
+              <div className="text-xs text-muted-foreground">{t('common:labels.notStarted')}</div>
+            </div>
+          </div>
         </div>
-        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-          <span>{t('navigation:gsd.totalPhases', { count: roadmap.total_phases })}</span>
-          <span>{t('navigation:gsd.currentPhase', { phase: roadmap.current_phase })}</span>
-        </div>
+
+        {/* Timeline View */}
+        <TimelineView
+          phases={roadmap.phases}
+          currentPhase={roadmap.current_phase}
+          onPhaseClick={(phase) => {
+            const newExpanded = new Set(expandedPhases);
+            if (newExpanded.has(phase.number)) {
+              newExpanded.delete(phase.number);
+            } else {
+              newExpanded.add(phase.number);
+            }
+            setExpandedPhases(newExpanded);
+
+            // Scroll to phase
+            document.getElementById(`phase-${phase.number}`)?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}
+        />
       </div>
 
       {/* Phase list */}
@@ -266,6 +312,7 @@ export function GsdView({ projectPath }: GsdViewProps) {
           {roadmap.phases.map((phase) => (
             <PhaseCard
               key={phase.number}
+              id={`phase-${phase.number}`}
               phase={phase}
               isExpanded={expandedPhases.has(phase.number)}
               onToggle={() => togglePhase(phase.number)}
@@ -374,6 +421,7 @@ function StatePanel({ state }: StatePanelProps) {
 
 // Phase Card Component
 interface PhaseCardProps {
+  id?: string;
   phase: GsdPhaseInfo;
   isExpanded: boolean;
   onToggle: () => void;
@@ -386,6 +434,7 @@ interface PhaseCardProps {
 }
 
 function PhaseCard({
+  id,
   phase,
   isExpanded,
   onToggle,
@@ -399,7 +448,7 @@ function PhaseCard({
   const { t } = useTranslation(['navigation', 'common']);
 
   return (
-    <Card className="overflow-hidden">
+    <Card id={id} className="overflow-hidden">
       <CardHeader className="p-3">
         <div
           className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 -m-3 p-3 rounded-t-lg"
