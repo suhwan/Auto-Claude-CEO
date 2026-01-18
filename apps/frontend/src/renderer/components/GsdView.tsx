@@ -10,7 +10,7 @@ import {
   CheckCircle2, Circle, PlayCircle,
   ChevronDown, ChevronRight, FileText,
   ArrowRight, Loader2, RefreshCw, AlertCircle,
-  FolderOpen, Activity, Target, X
+  FolderOpen, Activity, Target, X, Eye
 } from 'lucide-react';
 import type {
   GsdRoadmapInfo,
@@ -20,9 +20,11 @@ import type {
   GsdPlanDetail,
   GsdSharedBoard,
   GsdTeamTask,
-  GsdLeaderContext
+  GsdLeaderContext,
+  GsdPlanVerification,
+  GsdVerificationItem
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard } from './gsd';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel } from './gsd';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -49,6 +51,9 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // Leader Context state
   const [leaderContext, setLeaderContext] = useState<GsdLeaderContext | null>(null);
+
+  // Verification state for manual UAT
+  const [pendingVerifications, setPendingVerifications] = useState<GsdPlanVerification[]>([]);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -101,6 +106,17 @@ export function GsdView({ projectPath }: GsdViewProps) {
       } catch {
         // LeaderContext is optional, don't error if missing
         console.debug('LeaderContext not available');
+      }
+
+      // Load pending verifications for manual UAT
+      try {
+        const verificationsResult = await window.electronAPI.gsd.getPendingVerifications(projectPath);
+        if (verificationsResult.success && verificationsResult.data) {
+          setPendingVerifications(verificationsResult.data);
+        }
+      } catch {
+        // Verifications are optional, don't error if missing
+        console.debug('Verifications not available');
       }
     } catch (err) {
       console.error('Failed to load GSD data:', err);
@@ -270,6 +286,47 @@ export function GsdView({ projectPath }: GsdViewProps) {
     // TODO: Show task detail modal or navigate to task
   };
 
+  // Verification handlers for manual UAT
+  const handleApprove = async (
+    planId: string,
+    feedback?: string,
+    checklist?: GsdVerificationItem[]
+  ) => {
+    const result = await window.electronAPI.gsd.submitVerification(
+      projectPath,
+      planId,
+      true,
+      feedback,
+      checklist
+    );
+    if (result.success) {
+      // Refresh data to update verification status
+      await loadGsdData();
+    } else {
+      console.error('Failed to approve:', result.error);
+    }
+  };
+
+  const handleReject = async (
+    planId: string,
+    feedback: string,
+    checklist?: GsdVerificationItem[]
+  ) => {
+    const result = await window.electronAPI.gsd.submitVerification(
+      projectPath,
+      planId,
+      false,
+      feedback,
+      checklist
+    );
+    if (result.success) {
+      // Refresh data to update verification status
+      await loadGsdData();
+    } else {
+      console.error('Failed to reject:', result.error);
+    }
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header with tabs and progress visualization */}
@@ -383,6 +440,26 @@ export function GsdView({ projectPath }: GsdViewProps) {
           </div>
         )}
       </div>
+
+      {/* Pending Verifications - Manual UAT */}
+      {pendingVerifications.length > 0 && (
+        <div className="p-4 border-b bg-blue-50/50 dark:bg-blue-950/20">
+          <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Eye className="h-4 w-4 text-blue-500" />
+            {t('navigation:gsd.pendingVerifications')} ({pendingVerifications.length})
+          </h3>
+          <div className="space-y-3">
+            {pendingVerifications.map((verification) => (
+              <VerificationPanel
+                key={verification.plan_id}
+                verification={verification}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Phase list */}
       <ScrollArea className="flex-1">
