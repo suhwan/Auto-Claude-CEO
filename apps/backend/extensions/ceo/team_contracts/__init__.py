@@ -65,6 +65,9 @@ from .ui_data_schema import (
     create_ui_contract,
 )
 from .serializer import ContractSerializer
+from .registry import ContractRegistry
+from .version_manager import ContractVersionManager
+from .validator import ContractValidator
 
 __all__ = [
     # Enums
@@ -91,4 +94,10 @@ __all__ = [
     "create_data_contract",
     # Serializer
     "ContractSerializer",
+    # Registry
+    "ContractRegistry",
+    # Version Manager
+    "ContractVersionManager",
+    # Validator
+    "ContractValidator",
 ]
