@@ -61,6 +61,24 @@ export function setupGsdHandlers(): void {
   );
 
   /**
+   * Get detailed plan information
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_PLAN_DETAIL,
+    async (_event: IpcMainInvokeEvent, projectPath: string, planPath: string): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getPlanDetail', { projectPath, planPath });
+        const gsdService = getGsdService(projectPath);
+        const detail = await gsdService.getPlanDetail(planPath);
+        return { success: true, data: detail };
+      } catch (error) {
+        logger.error('gsd:getPlanDetail failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
    * Sync PLAN.md to kanban
    */
   ipcMain.handle(

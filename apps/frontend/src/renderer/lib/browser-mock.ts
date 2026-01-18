@@ -343,6 +343,10 @@ const browserMockAPI: ElectronAPI = {
       success: true,
       data: null
     }),
+    getPlanDetail: async () => ({
+      success: true,
+      data: null
+    }),
     getPhaseProgress: async () => ({
       success: true,
       data: {

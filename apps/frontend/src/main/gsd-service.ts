@@ -84,6 +84,34 @@ export interface GsdStateInfo {
   next_steps: string[];
 }
 
+export interface GsdPlanDetail {
+  id: string;
+  name: string;
+  phase: number;
+  plan: number;
+  path: string;
+  estimated_minutes: number;
+  parallel_safe: boolean;
+  depends_on?: string;
+  objective: string;
+  context: string;
+  tasks: GsdTaskDetail[];
+  verification: string;
+  success_criteria: string[];
+  output_files: string[];
+}
+
+export interface GsdTaskDetail {
+  id: string;
+  type: string;
+  name: string;
+  files: string[];
+  action: string;
+  verify: string;
+  done_criteria: string;
+  completed: boolean;
+}
+
 export interface GsdProgressInfo {
   total_phases: number;
   completed_phases: number;
@@ -196,6 +224,125 @@ export class GsdService {
       },
       next_steps: nextSteps
     };
+  }
+
+  /**
+   * Get detailed information about a specific plan
+   */
+  async getPlanDetail(planPath: string): Promise<GsdPlanDetail | null> {
+    const fullPath = path.join(this.projectPath, planPath);
+
+    if (!fs.existsSync(fullPath)) {
+      logger.warn(`PLAN.md not found at ${fullPath}`);
+      return null;
+    }
+
+    try {
+      const content = fs.readFileSync(fullPath, 'utf-8');
+      return this.parsePlanDetail(content, planPath);
+    } catch (error) {
+      logger.error('Failed to parse plan detail:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Parse PLAN.md content into detailed structure
+   */
+  private parsePlanDetail(content: string, planPath: string): GsdPlanDetail {
+    // Parse frontmatter
+    const frontmatter = this.parseFrontmatter(content);
+
+    // Parse objective
+    const objectiveMatch = /<objective>([\s\S]*?)<\/objective>/.exec(content);
+    const objective = objectiveMatch?.[1]?.trim() || '';
+
+    // Parse context
+    const contextMatch = /<context>([\s\S]*?)<\/context>/.exec(content);
+    const context = contextMatch?.[1]?.trim() || '';
+
+    // Parse tasks
+    const tasks = this.parseTaskDetails(content);
+
+    // Parse verification
+    const verificationMatch = /<verification>([\s\S]*?)<\/verification>/.exec(content);
+    const verification = verificationMatch?.[1]?.trim() || '';
+
+    // Parse success criteria
+    const successMatch = /<success_criteria>([\s\S]*?)<\/success_criteria>/.exec(content);
+    const successCriteria = successMatch?.[1]
+      ?.split('\n')
+      .filter(l => l.trim().startsWith('- [ ]') || l.trim().startsWith('- [x]'))
+      .map(l => l.replace(/^- \[[ x]\] /, '').trim()) || [];
+
+    // Parse output files
+    const outputMatch = /<output>([\s\S]*?)<\/output>/.exec(content);
+    const outputFiles = outputMatch?.[1]
+      ?.split('\n')
+      .filter(l => l.trim().startsWith('-'))
+      .map(l => l.replace(/^- /, '').trim().replace(/`/g, '')) || [];
+
+    // Check for SUMMARY file to determine task completion
+    const summaryPath = planPath.replace('-PLAN.md', '-SUMMARY.md').replace('PLAN-', '').replace('.md', '-SUMMARY.md');
+    const summaryExists = fs.existsSync(path.join(this.projectPath, summaryPath));
+
+    // Mark all tasks as completed if summary exists
+    if (summaryExists) {
+      tasks.forEach(task => task.completed = true);
+    }
+
+    return {
+      id: `${frontmatter.phase}-${String(frontmatter.plan).padStart(2, '0')}`,
+      name: String(frontmatter.name || ''),
+      phase: Number(frontmatter.phase) || 0,
+      plan: Number(frontmatter.plan) || 0,
+      path: planPath,
+      estimated_minutes: Number(frontmatter.estimated_minutes) || 15,
+      parallel_safe: Boolean(frontmatter.parallel_safe),
+      depends_on: frontmatter.depends_on ? String(frontmatter.depends_on) : undefined,
+      objective,
+      context,
+      tasks,
+      verification,
+      success_criteria: successCriteria,
+      output_files: outputFiles
+    };
+  }
+
+  /**
+   * Parse task details from PLAN.md content
+   */
+  private parseTaskDetails(content: string): GsdTaskDetail[] {
+    const tasks: GsdTaskDetail[] = [];
+    const taskRegex = /<task\s+type="([^"]+)">([\s\S]*?)<\/task>/g;
+    let match;
+    let taskIndex = 1;
+
+    while ((match = taskRegex.exec(content)) !== null) {
+      const taskType = match[1];
+      const taskContent = match[2];
+
+      const name = this.extractXmlTag(taskContent, 'name') || `Task ${taskIndex}`;
+      const files = this.extractXmlTag(taskContent, 'files')?.split(',').map(f => f.trim()) || [];
+      const action = this.extractXmlTag(taskContent, 'action') || '';
+      const verify = this.extractXmlTag(taskContent, 'verify') || '';
+      const done = this.extractXmlTag(taskContent, 'done') || '';
+
+      tasks.push({
+        id: `task-${taskIndex}`,
+        type: taskType,
+        name,
+        files,
+        action,
+        verify,
+        done_criteria: done,
+        completed: false // Will be determined by SUMMARY existence
+      });
+
+      taskIndex++;
+    }
+
+    return tasks;
   }
 
   /**

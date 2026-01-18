@@ -122,11 +122,46 @@ export interface GsdStateInfo {
 }
 
 /**
+ * GSD Plan detail information (from PLAN.md)
+ */
+export interface GsdPlanDetail {
+  id: string;
+  name: string;
+  phase: number;
+  plan: number;
+  path: string;
+  estimated_minutes: number;
+  parallel_safe: boolean;
+  depends_on?: string;
+  objective: string;
+  context: string;
+  tasks: GsdTaskDetail[];
+  verification: string;
+  success_criteria: string[];
+  output_files: string[];
+}
+
+/**
+ * GSD Task detail information
+ */
+export interface GsdTaskDetail {
+  id: string;
+  type: string;
+  name: string;
+  files: string[];
+  action: string;
+  verify: string;
+  done_criteria: string;
+  completed: boolean;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
   getRoadmap: (projectPath: string, roadmapPath?: string) => Promise<IPCResult<GsdRoadmapInfo>>;
   getState: (projectPath: string, statePath?: string) => Promise<IPCResult<GsdStateInfo | null>>;
+  getPlanDetail: (projectPath: string, planPath: string) => Promise<IPCResult<GsdPlanDetail | null>>;
   getPhaseProgress: (projectPath: string, roadmapPath?: string) => Promise<IPCResult<GsdProgressInfo>>;
   syncPlanToKanban: (projectPath: string, planPath: string) => Promise<IPCResult<GsdSyncResult>>;
   syncPhaseToKanban: (projectPath: string, phaseNumber: number) => Promise<IPCResult<GsdSyncResult>>;
@@ -144,6 +179,9 @@ export const createGsdAPI = (): GsdAPI => ({
 
   getState: (projectPath: string, statePath?: string): Promise<IPCResult<GsdStateInfo | null>> =>
     invokeIpc(IPC_CHANNELS.GSD_GET_STATE, projectPath, statePath),
+
+  getPlanDetail: (projectPath: string, planPath: string): Promise<IPCResult<GsdPlanDetail | null>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_PLAN_DETAIL, projectPath, planPath),
 
   getPhaseProgress: (projectPath: string, roadmapPath?: string): Promise<IPCResult<GsdProgressInfo>> =>
     invokeIpc(IPC_CHANNELS.GSD_GET_PHASE_PROGRESS, projectPath, roadmapPath),

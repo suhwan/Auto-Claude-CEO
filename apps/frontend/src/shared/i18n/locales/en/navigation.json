@@ -48,7 +48,14 @@
     "noPlans": "No plans defined for this phase",
     "syncAll": "Sync All",
     "syncing": "Syncing...",
-    "kanban": "Kanban"
+    "kanban": "Kanban",
+    "objective": "Objective",
+    "tasks": "Tasks",
+    "successCriteria": "Success Criteria",
+    "outputFiles": "Output Files",
+    "verification": "Verification",
+    "dependsOn": "Depends On",
+    "estimatedTime": "Estimated Time"
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",

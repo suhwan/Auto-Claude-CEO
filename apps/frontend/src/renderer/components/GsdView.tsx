@@ -10,13 +10,14 @@ import {
   CheckCircle2, Circle, PlayCircle,
   ChevronDown, ChevronRight, FileText,
   ArrowRight, Loader2, RefreshCw, AlertCircle,
-  FolderOpen, Activity, Target
+  FolderOpen, Activity, Target, X
 } from 'lucide-react';
 import type {
   GsdRoadmapInfo,
   GsdPhaseInfo,
   GsdPlanInfo,
-  GsdStateInfo
+  GsdStateInfo,
+  GsdPlanDetail
 } from '../../preload/api/modules/gsd-api';
 
 interface GsdViewProps {
@@ -32,6 +33,10 @@ export function GsdView({ projectPath }: GsdViewProps) {
   const [error, setError] = useState<string | null>(null);
   const [syncingPlan, setSyncingPlan] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Plan detail state
+  const [planDetail, setPlanDetail] = useState<GsdPlanDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -153,6 +158,29 @@ export function GsdView({ projectPath }: GsdViewProps) {
     }
   };
 
+  // Load plan detail handler
+  const loadPlanDetail = async (planPath: string) => {
+    if (!projectPath) return;
+
+    setLoadingDetail(true);
+
+    try {
+      const result = await window.electronAPI.gsd.getPlanDetail(projectPath, planPath);
+      if (result.success && result.data) {
+        setPlanDetail(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load plan detail:', error);
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
+  // Close detail panel
+  const closePlanDetail = () => {
+    setPlanDetail(null);
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -243,6 +271,7 @@ export function GsdView({ projectPath }: GsdViewProps) {
               onToggle={() => togglePhase(phase.number)}
               onSyncPlan={syncPlanToKanban}
               onSyncPhase={syncPhaseToKanban}
+              onPlanClick={loadPlanDetail}
               syncingPlan={syncingPlan}
               getStatusIcon={getStatusIcon}
               getStatusBadge={getStatusBadge}
@@ -250,6 +279,15 @@ export function GsdView({ projectPath }: GsdViewProps) {
           ))}
         </div>
       </ScrollArea>
+
+      {/* Plan Detail Modal */}
+      {planDetail && (
+        <PlanDetailPanel
+          plan={planDetail}
+          onClose={closePlanDetail}
+          loading={loadingDetail}
+        />
+      )}
     </div>
   );
 }
@@ -341,6 +379,7 @@ interface PhaseCardProps {
   onToggle: () => void;
   onSyncPlan: (plan: GsdPlanInfo) => void;
   onSyncPhase: (phaseNumber: number) => void;
+  onPlanClick: (planPath: string) => void;
   syncingPlan: string | null;
   getStatusIcon: (status: string) => React.ReactNode;
   getStatusBadge: (status: string) => React.ReactNode;
@@ -352,6 +391,7 @@ function PhaseCard({
   onToggle,
   onSyncPlan,
   onSyncPhase,
+  onPlanClick,
   syncingPlan,
   getStatusIcon,
   getStatusBadge
@@ -425,6 +465,7 @@ function PhaseCard({
                 key={plan.id}
                 plan={plan}
                 onSync={() => onSyncPlan(plan)}
+                onClick={() => onPlanClick(plan.path)}
                 isSyncing={syncingPlan === plan.path}
               />
             ))}
@@ -445,10 +486,11 @@ function PhaseCard({
 interface PlanRowProps {
   plan: GsdPlanInfo;
   onSync: () => void;
+  onClick: () => void;
   isSyncing: boolean;
 }
 
-function PlanRow({ plan, onSync, isSyncing }: PlanRowProps) {
+function PlanRow({ plan, onSync, onClick, isSyncing }: PlanRowProps) {
   const { t } = useTranslation(['navigation', 'common']);
 
   const getStatusColor = (status: string) => {
@@ -460,7 +502,10 @@ function PlanRow({ plan, onSync, isSyncing }: PlanRowProps) {
   };
 
   return (
-    <div className="flex items-center gap-2 text-sm p-2 rounded hover:bg-accent/30">
+    <div
+      className="flex items-center gap-2 text-sm p-2 rounded hover:bg-accent/30 cursor-pointer"
+      onClick={onClick}
+    >
       <FileText className={`h-3 w-3 ${getStatusColor(plan.status)}`} />
       <span className="flex-1 truncate">{plan.name}</span>
       {plan.tasks > 0 && (
@@ -472,7 +517,10 @@ function PlanRow({ plan, onSync, isSyncing }: PlanRowProps) {
         <Button
           variant="ghost"
           size="sm"
-          onClick={onSync}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSync();
+          }}
           disabled={isSyncing}
           className="h-6 px-2"
         >
@@ -486,6 +534,139 @@ function PlanRow({ plan, onSync, isSyncing }: PlanRowProps) {
           )}
         </Button>
       )}
+    </div>
+  );
+}
+
+// Plan Detail Panel Component (Modal)
+interface PlanDetailPanelProps {
+  plan: GsdPlanDetail;
+  onClose: () => void;
+  loading?: boolean;
+}
+
+function PlanDetailPanel({ plan, onClose, loading }: PlanDetailPanelProps) {
+  const { t } = useTranslation(['navigation', 'common']);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <Card
+        className="w-[600px] max-h-[80vh] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-lg">
+              Plan {plan.id}: {plan.name}
+            </CardTitle>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline">~{plan.estimated_minutes} min</Badge>
+              {plan.parallel_safe && <Badge variant="secondary">Parallel Safe</Badge>}
+              {plan.depends_on && <Badge variant="outline">{t('navigation:gsd.dependsOn')}: {plan.depends_on}</Badge>}
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+
+        <ScrollArea className="flex-1 px-6 pb-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              {/* Objective */}
+              {plan.objective && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-1">{t('navigation:gsd.objective')}</h4>
+                  <p className="text-sm text-muted-foreground">{plan.objective}</p>
+                </div>
+              )}
+
+              {/* Tasks */}
+              {plan.tasks.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">
+                    {t('navigation:gsd.tasks')} ({plan.tasks.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {plan.tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="flex items-start gap-2 p-2 rounded border"
+                      >
+                        <div className={`mt-0.5 ${task.completed ? 'text-green-500' : 'text-gray-400'}`}>
+                          {task.completed ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{task.name}</span>
+                            <Badge variant="outline" className="text-xs">{task.type}</Badge>
+                          </div>
+                          {task.files.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {task.files.join(', ')}
+                            </div>
+                          )}
+                          {task.done_criteria && (
+                            <div className="text-xs text-green-600 mt-1">
+                              {task.done_criteria}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Success Criteria */}
+              {plan.success_criteria.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">{t('navigation:gsd.successCriteria')}</h4>
+                  <div className="space-y-1">
+                    {plan.success_criteria.map((criteria, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <Circle className="h-3 w-3 text-gray-400" />
+                        <span>{criteria}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Output Files */}
+              {plan.output_files.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-2">{t('navigation:gsd.outputFiles')}</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {plan.output_files.map((file, i) => (
+                      <Badge key={i} variant="secondary" className="text-xs font-mono">
+                        {file}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Verification */}
+              {plan.verification && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium mb-1">{t('navigation:gsd.verification')}</h4>
+                  <pre className="text-xs bg-muted p-2 rounded overflow-x-auto whitespace-pre-wrap">
+                    {plan.verification}
+                  </pre>
+                </div>
+              )}
+            </>
+          )}
+        </ScrollArea>
+      </Card>
     </div>
   );
 }

@@ -525,6 +525,7 @@ export const IPC_CHANNELS = {
   // GSD (Get Shit Done) workflow operations
   GSD_GET_ROADMAP: 'gsd:getRoadmap',
   GSD_GET_STATE: 'gsd:getState',
+  GSD_GET_PLAN_DETAIL: 'gsd:getPlanDetail',
   GSD_GET_PHASE_PROGRESS: 'gsd:getPhaseProgress',
   GSD_SYNC_PLAN_TO_KANBAN: 'gsd:syncPlanToKanban',
   GSD_SYNC_PHASE_TO_KANBAN: 'gsd:syncPhaseToKanban',
