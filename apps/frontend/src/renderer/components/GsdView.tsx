@@ -1,0 +1,491 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ScrollArea } from './ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
+import { Progress } from './ui/progress';
+import { Button } from './ui/button';
+import { Alert, AlertDescription } from './ui/alert';
+import {
+  CheckCircle2, Circle, PlayCircle,
+  ChevronDown, ChevronRight, FileText,
+  ArrowRight, Loader2, RefreshCw, AlertCircle,
+  FolderOpen, Activity, Target
+} from 'lucide-react';
+import type {
+  GsdRoadmapInfo,
+  GsdPhaseInfo,
+  GsdPlanInfo,
+  GsdStateInfo
+} from '../../preload/api/modules/gsd-api';
+
+interface GsdViewProps {
+  projectPath: string;
+}
+
+export function GsdView({ projectPath }: GsdViewProps) {
+  const { t } = useTranslation(['navigation', 'common']);
+  const [roadmap, setRoadmap] = useState<GsdRoadmapInfo | null>(null);
+  const [state, setState] = useState<GsdStateInfo | null>(null);
+  const [expandedPhases, setExpandedPhases] = useState<Set<number>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [syncingPlan, setSyncingPlan] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load GSD data
+  const loadGsdData = useCallback(async () => {
+    if (!projectPath) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+
+      // Load roadmap and state in parallel
+      const [roadmapResult, stateResult] = await Promise.all([
+        window.electronAPI.gsd.getRoadmap(projectPath),
+        window.electronAPI.gsd.getState(projectPath)
+      ]);
+
+      if (roadmapResult.success && roadmapResult.data) {
+        setRoadmap(roadmapResult.data);
+        // Auto-expand current phase
+        if (roadmapResult.data.current_phase) {
+          setExpandedPhases(new Set([roadmapResult.data.current_phase]));
+        }
+      } else {
+        setError(roadmapResult.error || 'Failed to load roadmap');
+      }
+
+      // Load state (optional - don't error if missing)
+      if (stateResult.success && stateResult.data) {
+        setState(stateResult.data);
+      }
+    } catch (err) {
+      console.error('Failed to load GSD data:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  }, [projectPath]);
+
+  // Initial load
+  useEffect(() => {
+    loadGsdData();
+  }, [loadGsdData]);
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadGsdData();
+    setRefreshing(false);
+  };
+
+  const togglePhase = (phaseNum: number) => {
+    const newExpanded = new Set(expandedPhases);
+    if (newExpanded.has(phaseNum)) {
+      newExpanded.delete(phaseNum);
+    } else {
+      newExpanded.add(phaseNum);
+    }
+    setExpandedPhases(newExpanded);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'complete': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'in_progress': return <PlayCircle className="h-4 w-4 text-blue-500" />;
+      default: return <Circle className="h-4 w-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <Badge variant="default" className="bg-green-600">{t('common:labels.complete')}</Badge>;
+      case 'in_progress':
+        return <Badge variant="secondary">{t('common:labels.inProgress')}</Badge>;
+      default:
+        return <Badge variant="outline">{t('common:labels.notStarted')}</Badge>;
+    }
+  };
+
+  const syncPlanToKanban = async (plan: GsdPlanInfo) => {
+    if (!projectPath) return;
+
+    try {
+      setSyncingPlan(plan.path);
+
+      const result = await window.electronAPI.gsd.syncPlanToKanban(projectPath, plan.path);
+
+      if (result.success && result.data) {
+        console.log('Sync result:', result.data);
+        // Optionally show a toast notification
+      } else {
+        console.error('Sync failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to sync to kanban:', error);
+    } finally {
+      setSyncingPlan(null);
+    }
+  };
+
+  const syncPhaseToKanban = async (phaseNumber: number) => {
+    if (!projectPath) return;
+
+    try {
+      setSyncingPlan(`phase-${phaseNumber}`);
+
+      const result = await window.electronAPI.gsd.syncPhaseToKanban(projectPath, phaseNumber);
+
+      if (result.success && result.data) {
+        console.log('Phase sync result:', result.data);
+      } else {
+        console.error('Phase sync failed:', result.error);
+      }
+    } catch (error) {
+      console.error('Failed to sync phase:', error);
+    } finally {
+      setSyncingPlan(null);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{t('common:labels.loading')}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="h-full flex flex-col p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" className="mt-4 self-start" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          {t('common:buttons.retry')}
+        </Button>
+      </div>
+    );
+  }
+
+  // No roadmap found
+  if (!roadmap || roadmap.phases.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center p-8">
+        <FolderOpen className="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h3 className="text-lg font-medium text-muted-foreground mb-2">
+          {t('navigation:gsd.noRoadmap')}
+        </h3>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          {t('navigation:gsd.noRoadmapDescription')}
+        </p>
+        <Button variant="outline" className="mt-4" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          {t('common:buttons.refresh')}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header with progress */}
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">{t('navigation:gsd.title')}</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Progress value={roadmap.progress_percent} className="flex-1" />
+          <span className="text-sm text-muted-foreground min-w-[3rem] text-right">
+            {roadmap.progress_percent}%
+          </span>
+        </div>
+        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+          <span>{t('navigation:gsd.totalPhases', { count: roadmap.total_phases })}</span>
+          <span>{t('navigation:gsd.currentPhase', { phase: roadmap.current_phase })}</span>
+        </div>
+      </div>
+
+      {/* Phase list */}
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-2">
+          {/* State Panel */}
+          {state && <StatePanel state={state} />}
+
+          {roadmap.phases.map((phase) => (
+            <PhaseCard
+              key={phase.number}
+              phase={phase}
+              isExpanded={expandedPhases.has(phase.number)}
+              onToggle={() => togglePhase(phase.number)}
+              onSyncPlan={syncPlanToKanban}
+              onSyncPhase={syncPhaseToKanban}
+              syncingPlan={syncingPlan}
+              getStatusIcon={getStatusIcon}
+              getStatusBadge={getStatusBadge}
+            />
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
+// State Panel Component
+interface StatePanelProps {
+  state: GsdStateInfo;
+}
+
+function StatePanel({ state }: StatePanelProps) {
+  const { t } = useTranslation(['navigation', 'common']);
+
+  return (
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Activity className="h-4 w-4" />
+          {t('navigation:gsd.currentState')}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Current Focus */}
+        {state.current_focus && (
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-blue-500" />
+            <span className="text-sm font-medium">{state.current_focus}</span>
+          </div>
+        )}
+
+        {/* Current Position */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">{t('navigation:gsd.phase')}:</span>
+            <span>{state.current_position.phase}/{state.current_position.total_phases}</span>
+            {state.current_position.phase_name && (
+              <span className="text-muted-foreground">({state.current_position.phase_name})</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-muted-foreground">{t('navigation:gsd.status')}:</span>
+            <Badge variant={state.current_position.status.includes('Ready') ? 'default' : 'secondary'}>
+              {state.current_position.status}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Performance Metrics */}
+        <div className="border-t pt-2">
+          <div className="text-xs text-muted-foreground mb-1">{t('navigation:gsd.performance')}</div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-lg font-bold">{state.performance_metrics.total_plans_completed}</div>
+              <div className="text-muted-foreground">{t('navigation:gsd.plansCompleted')}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold">{state.performance_metrics.average_duration || '-'}</div>
+              <div className="text-muted-foreground">{t('navigation:gsd.avgDuration')}</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold">{state.performance_metrics.total_execution_time || '-'}</div>
+              <div className="text-muted-foreground">{t('navigation:gsd.totalTime')}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Next Steps */}
+        {state.next_steps.length > 0 && (
+          <div className="border-t pt-2">
+            <div className="text-xs text-muted-foreground mb-1">{t('navigation:gsd.nextSteps')}</div>
+            <div className="space-y-1">
+              {state.next_steps.slice(0, 2).map((step, i) => (
+                <div key={i} className="flex items-center gap-1 text-xs">
+                  <ArrowRight className="h-3 w-3 text-green-500" />
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// Phase Card Component
+interface PhaseCardProps {
+  phase: GsdPhaseInfo;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onSyncPlan: (plan: GsdPlanInfo) => void;
+  onSyncPhase: (phaseNumber: number) => void;
+  syncingPlan: string | null;
+  getStatusIcon: (status: string) => React.ReactNode;
+  getStatusBadge: (status: string) => React.ReactNode;
+}
+
+function PhaseCard({
+  phase,
+  isExpanded,
+  onToggle,
+  onSyncPlan,
+  onSyncPhase,
+  syncingPlan,
+  getStatusIcon,
+  getStatusBadge
+}: PhaseCardProps) {
+  const { t } = useTranslation(['navigation', 'common']);
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="p-3">
+        <div
+          className="flex items-center gap-2 cursor-pointer hover:bg-accent/50 -m-3 p-3 rounded-t-lg"
+          onClick={onToggle}
+        >
+          {isExpanded
+            ? <ChevronDown className="h-4 w-4 shrink-0" />
+            : <ChevronRight className="h-4 w-4 shrink-0" />
+          }
+          {getStatusIcon(phase.status)}
+          <CardTitle className="text-sm flex-1">
+            Phase {phase.number}: {phase.name}
+          </CardTitle>
+          {getStatusBadge(phase.status)}
+          {phase.status !== 'complete' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSyncPhase(phase.number);
+              }}
+              disabled={syncingPlan === `phase-${phase.number}`}
+              className="ml-2"
+            >
+              {syncingPlan === `phase-${phase.number}` ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                  {t('navigation:gsd.syncing')}
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-3 w-3 mr-1" />
+                  {t('navigation:gsd.syncAll')}
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+
+      {isExpanded && (
+        <CardContent className="p-3 pt-0">
+          <p className="text-sm text-muted-foreground mb-3">{phase.goal}</p>
+
+          {/* Progress bar for plans */}
+          {phase.total_plans > 0 && (
+            <div className="flex items-center gap-2 mb-3">
+              <Progress
+                value={(phase.completed_plans / phase.total_plans) * 100}
+                className="flex-1 h-2"
+              />
+              <span className="text-xs text-muted-foreground">
+                {phase.completed_plans}/{phase.total_plans}
+              </span>
+            </div>
+          )}
+
+          {/* Plans list */}
+          <div className="space-y-1">
+            {phase.plans.map((plan) => (
+              <PlanRow
+                key={plan.id}
+                plan={plan}
+                onSync={() => onSyncPlan(plan)}
+                isSyncing={syncingPlan === plan.path}
+              />
+            ))}
+          </div>
+
+          {phase.plans.length === 0 && (
+            <p className="text-sm text-muted-foreground italic">
+              {t('navigation:gsd.noPlans')}
+            </p>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// Plan Row Component
+interface PlanRowProps {
+  plan: GsdPlanInfo;
+  onSync: () => void;
+  isSyncing: boolean;
+}
+
+function PlanRow({ plan, onSync, isSyncing }: PlanRowProps) {
+  const { t } = useTranslation(['navigation', 'common']);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'complete': return 'text-green-500';
+      case 'in_progress': return 'text-blue-500';
+      default: return 'text-gray-400';
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-2 text-sm p-2 rounded hover:bg-accent/30">
+      <FileText className={`h-3 w-3 ${getStatusColor(plan.status)}`} />
+      <span className="flex-1 truncate">{plan.name}</span>
+      {plan.tasks > 0 && (
+        <span className="text-muted-foreground text-xs">
+          ({plan.completed}/{plan.tasks})
+        </span>
+      )}
+      {plan.status !== 'complete' && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSync}
+          disabled={isSyncing}
+          className="h-6 px-2"
+        >
+          {isSyncing ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <>
+              <ArrowRight className="h-3 w-3 mr-1" />
+              {t('navigation:gsd.kanban')}
+            </>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}

@@ -8,6 +8,7 @@
     "terminals": "Agent Terminals",
     "insights": "Insights",
     "roadmap": "Roadmap",
+    "gsd": "GSD Workflow",
     "ideation": "Ideation",
     "changelog": "Changelog",
     "context": "Context",
@@ -29,6 +30,25 @@
   },
   "messages": {
     "initializeToCreateTasks": "Initialize Auto Claude to create tasks"
+  },
+  "gsd": {
+    "title": "GSD Workflow",
+    "currentState": "Current State",
+    "phase": "Phase",
+    "status": "Status",
+    "performance": "Performance",
+    "plansCompleted": "Plans",
+    "avgDuration": "Avg",
+    "totalTime": "Total",
+    "nextSteps": "Next Steps",
+    "noRoadmap": "No Roadmap Found",
+    "noRoadmapDescription": "Create a ROADMAP.md file in the .planning directory to track your project phases and plans.",
+    "totalPhases": "{{count}} Phases",
+    "currentPhase": "Current: Phase {{phase}}",
+    "noPlans": "No plans defined for this phase",
+    "syncAll": "Sync All",
+    "syncing": "Syncing...",
+    "kanban": "Kanban"
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",

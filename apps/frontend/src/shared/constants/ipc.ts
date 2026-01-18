@@ -520,5 +520,22 @@ export const IPC_CHANNELS = {
   // Sentry error reporting
   SENTRY_STATE_CHANGED: 'sentry:state-changed',  // Notify main process when setting changes
   GET_SENTRY_DSN: 'sentry:get-dsn',              // Get DSN from main process (env var)
-  GET_SENTRY_CONFIG: 'sentry:get-config'         // Get full Sentry config (DSN + sample rates)
+  GET_SENTRY_CONFIG: 'sentry:get-config',         // Get full Sentry config (DSN + sample rates)
+
+  // GSD (Get Shit Done) workflow operations
+  GSD_GET_ROADMAP: 'gsd:getRoadmap',
+  GSD_GET_STATE: 'gsd:getState',
+  GSD_GET_PHASE_PROGRESS: 'gsd:getPhaseProgress',
+  GSD_SYNC_PLAN_TO_KANBAN: 'gsd:syncPlanToKanban',
+  GSD_SYNC_PHASE_TO_KANBAN: 'gsd:syncPhaseToKanban',
+  GSD_UPDATE_TASK_STATUS: 'gsd:updateTaskStatus',
+  GSD_GENERATE_SUMMARY: 'gsd:generateSummary',
+  GSD_GET_SYNC_STATUS: 'gsd:getSyncStatus',
+
+  // CEO (Chief Executive Officer) agent operations
+  CEO_LOAD_AGENTS: 'ceo:loadAgents',
+  CEO_GET_AGENT: 'ceo:getAgent',
+  CEO_GET_TEAMS: 'ceo:getTeams',
+  CEO_CLASSIFY_TASK: 'ceo:classifyTask',
+  CEO_ROUTE_TASK: 'ceo:routeTask'
 } as const;

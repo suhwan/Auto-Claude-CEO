@@ -8,6 +8,7 @@
     "terminals": "Terminaux Agent",
     "insights": "Insights",
     "roadmap": "Feuille de route",
+    "gsd": "GSD Workflow",
     "ideation": "Idéation",
     "changelog": "Journal des modifications",
     "context": "Contexte",
@@ -29,6 +30,25 @@
   },
   "messages": {
     "initializeToCreateTasks": "Initialisez Auto Claude pour créer des tâches"
+  },
+  "gsd": {
+    "title": "Workflow GSD",
+    "currentState": "État Actuel",
+    "phase": "Phase",
+    "status": "Statut",
+    "performance": "Performance",
+    "plansCompleted": "Plans",
+    "avgDuration": "Moy",
+    "totalTime": "Total",
+    "nextSteps": "Prochaines Étapes",
+    "noRoadmap": "Aucune Roadmap trouvée",
+    "noRoadmapDescription": "Créez un fichier ROADMAP.md dans le répertoire .planning pour suivre les phases et plans de votre projet.",
+    "totalPhases": "{{count}} Phases",
+    "currentPhase": "Actuel: Phase {{phase}}",
+    "noPlans": "Aucun plan défini pour cette phase",
+    "syncAll": "Tout synchroniser",
+    "syncing": "Synchronisation...",
+    "kanban": "Kanban"
   },
   "claudeCode": {
     "checking": "Vérification de Claude Code...",
