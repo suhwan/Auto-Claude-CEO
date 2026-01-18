@@ -532,6 +532,7 @@ export const IPC_CHANNELS = {
   GSD_UPDATE_TASK_STATUS: 'gsd:updateTaskStatus',
   GSD_GENERATE_SUMMARY: 'gsd:generateSummary',
   GSD_GET_SYNC_STATUS: 'gsd:getSyncStatus',
+  GSD_GET_SHARED_BOARD: 'gsd:getSharedBoard',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',

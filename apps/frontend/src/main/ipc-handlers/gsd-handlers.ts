@@ -186,5 +186,23 @@ export function setupGsdHandlers(): void {
     }
   );
 
+  /**
+   * Get SharedBoard for CEO Team Kanban
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_SHARED_BOARD,
+    async (_event: IpcMainInvokeEvent, projectPath: string, phase?: number): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getSharedBoard', { projectPath, phase });
+        const gsdService = getGsdService(projectPath);
+        const board = await gsdService.getSharedBoard(phase);
+        return { success: true, data: board };
+      } catch (error) {
+        logger.error('gsd:getSharedBoard failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
   logger.info('[GSD] IPC handlers registered');
 }

@@ -156,6 +156,46 @@ export interface GsdTaskDetail {
 }
 
 /**
+ * GSD Team Task (for SharedBoard/Kanban)
+ */
+export interface GsdTeamTask {
+  id: string;
+  team_id: string;
+  title: string;
+  description: string;
+  status: 'not_started' | 'in_progress' | 'blocked' | 'waiting' | 'completed';
+  progress: number;
+  depends_on: string[];
+  blocking: string[];
+  assignee?: string;
+  priority: number;
+}
+
+/**
+ * GSD Team Lane (for SharedBoard/Kanban)
+ */
+export interface GsdTeamLane {
+  team_id: string;
+  team_name: string;
+  tasks: GsdTeamTask[];
+  total_tasks: number;
+  completed_tasks: number;
+  blocked_tasks: number;
+}
+
+/**
+ * GSD Shared Board (for CEO Team Kanban)
+ */
+export interface GsdSharedBoard {
+  id: string;
+  name: string;
+  phase: number;
+  lanes: GsdTeamLane[];
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -168,6 +208,7 @@ export interface GsdAPI {
   updateTaskStatus: (projectPath: string, taskId: string, status: string) => Promise<IPCResult<{ success: boolean }>>;
   generateSummary: (projectPath: string, planPath: string) => Promise<IPCResult<{ summaryPath: string | null }>>;
   getSyncStatus: (projectPath: string) => Promise<IPCResult<GsdSyncStatus>>;
+  getSharedBoard: (projectPath: string, phase?: number) => Promise<IPCResult<GsdSharedBoard | null>>;
 }
 
 /**
@@ -199,5 +240,8 @@ export const createGsdAPI = (): GsdAPI => ({
     invokeIpc(IPC_CHANNELS.GSD_GENERATE_SUMMARY, projectPath, planPath),
 
   getSyncStatus: (projectPath: string): Promise<IPCResult<GsdSyncStatus>> =>
-    invokeIpc(IPC_CHANNELS.GSD_GET_SYNC_STATUS, projectPath)
+    invokeIpc(IPC_CHANNELS.GSD_GET_SYNC_STATUS, projectPath),
+
+  getSharedBoard: (projectPath: string, phase?: number): Promise<IPCResult<GsdSharedBoard | null>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_SHARED_BOARD, projectPath, phase)
 });
