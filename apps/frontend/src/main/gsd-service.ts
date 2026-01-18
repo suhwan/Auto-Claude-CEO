@@ -176,6 +176,35 @@ export interface GsdLeaderContext {
   updated_at: string;
 }
 
+// Verification types for manual UAT
+export type VerificationStatus = 'pending' | 'approved' | 'rejected' | 'not_required';
+
+export interface GsdVerificationItem {
+  id: string;
+  description: string;
+  checked: boolean;
+}
+
+export interface GsdPlanVerification {
+  plan_id: string;
+  plan_name: string;
+  phase: number;
+  auto_qa_passed: boolean;
+  verification_status: VerificationStatus;
+  checklist: GsdVerificationItem[];
+  feedback?: string;
+  verified_at?: string;
+  verified_by?: string;
+}
+
+export interface GsdVerificationHistory {
+  id: string;
+  plan_id: string;
+  action: 'approved' | 'rejected';
+  feedback?: string;
+  timestamp: string;
+}
+
 // SharedBoard types for CEO Team Kanban
 export interface GsdTeamTask {
   id: string;
@@ -1193,5 +1222,226 @@ Source: ${planPath}
       })),
       updated_at: String(data.updated_at || new Date().toISOString())
     };
+  }
+
+  /**
+   * Get pending verifications for plans that have completed Auto-Claude QA
+   */
+  async getPendingVerifications(): Promise<GsdPlanVerification[]> {
+    const stateFile = path.join(this.projectPath, '.planning', 'STATE.md');
+
+    if (!fs.existsSync(stateFile)) {
+      return [];
+    }
+
+    const content = fs.readFileSync(stateFile, 'utf-8');
+
+    // Parse recent completed plans that need verification
+    const recentPlansMatch = /Recent Trend:[\s\S]*?Last \d+ plans: (.+)/i.exec(content);
+    if (!recentPlansMatch) {
+      return [];
+    }
+
+    const recentPlans = recentPlansMatch[1].split(',').map(s => s.trim());
+    const completedPlans = recentPlans.filter(p => p.includes('✓'));
+
+    // Check verification status file
+    const verificationFile = path.join(this.projectPath, '.planning', 'verifications.json');
+    let verifications: Record<string, GsdPlanVerification> = {};
+
+    if (fs.existsSync(verificationFile)) {
+      try {
+        verifications = JSON.parse(fs.readFileSync(verificationFile, 'utf-8'));
+      } catch {
+        logger.warn('Failed to parse verifications.json');
+      }
+    }
+
+    // Find plans needing verification
+    const pending: GsdPlanVerification[] = [];
+
+    for (const planRef of completedPlans.slice(-3)) {
+      const planId = planRef.replace('✓', '').trim();
+
+      if (!verifications[planId] || verifications[planId].verification_status === 'pending') {
+        pending.push({
+          plan_id: planId,
+          plan_name: await this.getPlanNameForVerification(planId),
+          phase: parseInt(planId.split('-')[0]) || 0,
+          auto_qa_passed: true,
+          verification_status: 'pending',
+          checklist: await this.getDefaultChecklist(planId)
+        });
+      }
+    }
+
+    return pending;
+  }
+
+  /**
+   * Get plan name for verification display
+   */
+  private async getPlanNameForVerification(planId: string): Promise<string> {
+    // Try to find plan file
+    const [phaseNum] = planId.split('-');
+    const phaseDir = this.findPhaseDir(parseInt(phaseNum));
+
+    if (!phaseDir) return planId;
+
+    const planFile = path.join(phaseDir, `${planId}-PLAN.md`);
+    if (!fs.existsSync(planFile)) return planId;
+
+    try {
+      const content = fs.readFileSync(planFile, 'utf-8');
+      const nameMatch = /name:\s*(.+)/i.exec(content);
+
+      return nameMatch?.[1] || planId;
+    } catch {
+      return planId;
+    }
+  }
+
+  /**
+   * Find phase directory for a given phase number
+   */
+  private findPhaseDir(phaseNum: number): string | null {
+    const phasesDir = path.join(this.projectPath, '.planning', 'phases');
+    if (!fs.existsSync(phasesDir)) return null;
+
+    const phaseStr = String(phaseNum).padStart(2, '0');
+    const dirs = fs.readdirSync(phasesDir).filter(d => d.startsWith(phaseStr));
+
+    if (dirs.length === 0) return null;
+    return path.join(phasesDir, dirs[0]);
+  }
+
+  /**
+   * Get default verification checklist for a plan
+   */
+  private async getDefaultChecklist(planId: string): Promise<GsdVerificationItem[]> {
+    // Try to get success_criteria from plan
+    const [phaseNum] = planId.split('-');
+    const phaseDir = this.findPhaseDir(parseInt(phaseNum));
+
+    const defaultChecklist: GsdVerificationItem[] = [
+      { id: '1', description: 'Feature works as expected', checked: false },
+      { id: '2', description: 'UI displays correctly', checked: false },
+      { id: '3', description: 'No visual bugs', checked: false }
+    ];
+
+    if (!phaseDir) {
+      return defaultChecklist;
+    }
+
+    const planFile = path.join(phaseDir, `${planId}-PLAN.md`);
+    if (!fs.existsSync(planFile)) {
+      return defaultChecklist;
+    }
+
+    try {
+      const content = fs.readFileSync(planFile, 'utf-8');
+      const criteriaMatch = /<success_criteria>([\s\S]*?)<\/success_criteria>/i.exec(content);
+
+      if (!criteriaMatch) {
+        return defaultChecklist;
+      }
+
+      const criteria = criteriaMatch[1]
+        .split('\n')
+        .filter(line => line.includes('[ ]') || line.includes('[x]'))
+        .map((line, index) => ({
+          id: String(index + 1),
+          description: line.replace(/^-\s*\[.\]\s*/, '').trim(),
+          checked: false
+        }));
+
+      return criteria.length > 0 ? criteria : defaultChecklist;
+    } catch {
+      return defaultChecklist;
+    }
+  }
+
+  /**
+   * Submit verification result for a plan
+   */
+  async submitVerification(
+    planId: string,
+    approved: boolean,
+    feedback?: string,
+    checklist?: GsdVerificationItem[]
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const verificationFile = path.join(this.projectPath, '.planning', 'verifications.json');
+      let verifications: Record<string, GsdPlanVerification> = {};
+
+      if (fs.existsSync(verificationFile)) {
+        try {
+          verifications = JSON.parse(fs.readFileSync(verificationFile, 'utf-8'));
+        } catch {
+          logger.warn('Failed to parse existing verifications.json');
+        }
+      }
+
+      verifications[planId] = {
+        plan_id: planId,
+        plan_name: await this.getPlanNameForVerification(planId),
+        phase: parseInt(planId.split('-')[0]) || 0,
+        auto_qa_passed: true,
+        verification_status: approved ? 'approved' : 'rejected',
+        feedback,
+        checklist: checklist || [],
+        verified_at: new Date().toISOString()
+      };
+
+      // Ensure directory exists
+      const dir = path.dirname(verificationFile);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      fs.writeFileSync(verificationFile, JSON.stringify(verifications, null, 2));
+
+      // If rejected, create a fix request file
+      if (!approved && feedback) {
+        await this.createFixRequest(planId, feedback);
+      }
+
+      logger.info(`Verification submitted for ${planId}: ${approved ? 'approved' : 'rejected'}`);
+      return { success: true };
+    } catch (error) {
+      logger.error('Failed to submit verification:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
+  /**
+   * Create a fix request file when verification is rejected
+   */
+  private async createFixRequest(planId: string, feedback: string): Promise<void> {
+    const fixRequestDir = path.join(this.projectPath, '.planning', 'fix_requests');
+    const fixRequestFile = path.join(fixRequestDir, `${planId}-FIX-REQUEST.md`);
+
+    if (!fs.existsSync(fixRequestDir)) {
+      fs.mkdirSync(fixRequestDir, { recursive: true });
+    }
+
+    const content = `# Fix Request: ${planId}
+
+## Status
+- Created: ${new Date().toISOString()}
+- Status: pending
+
+## User Feedback
+${feedback}
+
+## Action Required
+Run \`/gsd:plan-fix ${planId}\` to create a fix plan.
+`;
+
+    fs.writeFileSync(fixRequestFile, content);
+    logger.info(`Fix request created: ${fixRequestFile}`);
   }
 }
