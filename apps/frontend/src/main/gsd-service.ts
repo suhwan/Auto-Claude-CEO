@@ -119,6 +119,38 @@ export interface GsdProgressInfo {
   current_phase: number;
 }
 
+// SharedBoard types for CEO Team Kanban
+export interface GsdTeamTask {
+  id: string;
+  team_id: string;
+  title: string;
+  description: string;
+  status: 'not_started' | 'in_progress' | 'blocked' | 'waiting' | 'completed';
+  progress: number;
+  depends_on: string[];
+  blocking: string[];
+  assignee?: string;
+  priority: number;
+}
+
+export interface GsdTeamLane {
+  team_id: string;
+  team_name: string;
+  tasks: GsdTeamTask[];
+  total_tasks: number;
+  completed_tasks: number;
+  blocked_tasks: number;
+}
+
+export interface GsdSharedBoard {
+  id: string;
+  name: string;
+  phase: number;
+  lanes: GsdTeamLane[];
+  created_at: string;
+  updated_at: string;
+}
+
 export class GsdService {
   private projectPath: string;
 
@@ -939,6 +971,78 @@ Source: ${planPath}
       pending_tasks: pendingTasks,
       completed_tasks: completedTasks,
       last_sync: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get SharedBoard data for CEO Team Kanban visualization
+   */
+  async getSharedBoard(phase?: number): Promise<GsdSharedBoard | null> {
+    const boardDir = path.join(this.projectPath, '.planning', 'team_sync', 'shared_board');
+
+    if (!fs.existsSync(boardDir)) {
+      logger.debug(`SharedBoard directory not found at ${boardDir}`);
+      return null;
+    }
+
+    try {
+      // Find board file (latest or specific phase)
+      const files = fs.readdirSync(boardDir).filter(f => f.endsWith('.json'));
+
+      if (files.length === 0) {
+        logger.debug('No board files found in SharedBoard directory');
+        return null;
+      }
+
+      // Sort by modification time, get latest
+      const latestFile = files
+        .map(f => ({ name: f, mtime: fs.statSync(path.join(boardDir, f)).mtime }))
+        .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())[0];
+
+      const content = fs.readFileSync(path.join(boardDir, latestFile.name), 'utf-8');
+      const data = JSON.parse(content);
+
+      return this.transformBoardData(data);
+    } catch (error) {
+      logger.error('Failed to load SharedBoard:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Transform raw board data to GsdSharedBoard format
+   */
+  private transformBoardData(data: Record<string, unknown>): GsdSharedBoard {
+    const lanes = data.lanes as Array<Record<string, unknown>> || [];
+
+    return {
+      id: String(data.id || ''),
+      name: String(data.name || ''),
+      phase: Number(data.phase) || 0,
+      lanes: lanes.map((lane) => {
+        const tasks = lane.tasks as Array<Record<string, unknown>> || [];
+        return {
+          team_id: String(lane.team_id || ''),
+          team_name: String(lane.team_name || lane.team_id || ''),
+          tasks: tasks.map((task) => ({
+            id: String(task.id || ''),
+            team_id: String(task.team_id || ''),
+            title: String(task.title || ''),
+            description: String(task.description || ''),
+            status: (task.status as GsdTeamTask['status']) || 'not_started',
+            progress: Number(task.progress) || 0,
+            depends_on: Array.isArray(task.depends_on) ? task.depends_on.map(String) : [],
+            blocking: Array.isArray(task.blocking) ? task.blocking.map(String) : [],
+            assignee: task.assignee ? String(task.assignee) : undefined,
+            priority: Number(task.priority) || 3
+          })),
+          total_tasks: tasks.length,
+          completed_tasks: tasks.filter((t) => t.status === 'completed').length,
+          blocked_tasks: tasks.filter((t) => t.status === 'blocked').length
+        };
+      }),
+      created_at: String(data.created_at || new Date().toISOString()),
+      updated_at: String(data.updated_at || new Date().toISOString())
     };
   }
 }
