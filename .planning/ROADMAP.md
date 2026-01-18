@@ -126,12 +126,12 @@ Plans:
 **Depends on**: Phase 8
 **Research**: Likely (Electron IPC)
 **Research topics**: IPC 패턴, React 컴포넌트 통합, 상태 관리
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 09-01: GSD 탭 UI 컴포넌트
-- [ ] 09-02: ROADMAP.md 파싱 및 표시
-- [ ] 09-03: 진행상황 시각화
+- [ ] 09-01: STATE.md 실시간 표시
+- [ ] 09-02: Plan 상세 보기 및 편집
+- [ ] 09-03: 진행 시각화 개선
 
 ### Phase 10: UI Dashboard
 **Goal**: 팀별 칸반 레인, 리더 Context 대시보드
