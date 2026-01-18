@@ -17,9 +17,12 @@ import type {
   GsdPhaseInfo,
   GsdPlanInfo,
   GsdStateInfo,
-  GsdPlanDetail
+  GsdPlanDetail,
+  GsdSharedBoard,
+  GsdTeamTask
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing } from './gsd';
+import { TimelineView, ProgressRing, TeamKanbanView } from './gsd';
+import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
   projectPath: string;
@@ -38,6 +41,10 @@ export function GsdView({ projectPath }: GsdViewProps) {
   // Plan detail state
   const [planDetail, setPlanDetail] = useState<GsdPlanDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+
+  // Kanban view state
+  const [board, setBoard] = useState<GsdSharedBoard | null>(null);
+  const [activeTab, setActiveTab] = useState<'timeline' | 'kanban'>('timeline');
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -68,6 +75,17 @@ export function GsdView({ projectPath }: GsdViewProps) {
       // Load state (optional - don't error if missing)
       if (stateResult.success && stateResult.data) {
         setState(stateResult.data);
+      }
+
+      // Load SharedBoard for Kanban view (optional)
+      try {
+        const boardResult = await window.electronAPI.gsd.getSharedBoard(projectPath);
+        if (boardResult.success && boardResult.data) {
+          setBoard(boardResult.data);
+        }
+      } catch {
+        // SharedBoard is optional, don't error if missing
+        console.debug('SharedBoard not available');
       }
     } catch (err) {
       console.error('Failed to load GSD data:', err);
@@ -231,76 +249,110 @@ export function GsdView({ projectPath }: GsdViewProps) {
     );
   }
 
+  // Handle task click from Kanban view
+  const handleTaskClick = (task: GsdTeamTask) => {
+    console.log('Task clicked:', task);
+    // TODO: Show task detail modal or navigate to task
+  };
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header with progress visualization */}
+      {/* Header with tabs and progress visualization */}
       <div className="p-4 border-b">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('navigation:gsd.title')}</h2>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-
-        {/* Progress Summary Row */}
-        <div className="flex items-center gap-6 mb-4">
-          {/* Progress Ring */}
-          <ProgressRing progress={roadmap.progress_percent} size={80}>
-            <div className="text-center">
-              <span className="text-xl font-bold">{roadmap.progress_percent}%</span>
-              <div className="text-[10px] text-muted-foreground">
-                {roadmap.phases.filter(p => p.status === 'complete').length}/{roadmap.total_phases}
-              </div>
-            </div>
-          </ProgressRing>
-
-          {/* Stats Grid */}
-          <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {roadmap.phases.filter(p => p.status === 'complete').length}
-              </div>
-              <div className="text-xs text-muted-foreground">{t('common:labels.complete')}</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {roadmap.phases.filter(p => p.status === 'in_progress').length}
-              </div>
-              <div className="text-xs text-muted-foreground">{t('common:labels.inProgress')}</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-400">
-                {roadmap.phases.filter(p => p.status === 'not_started').length}
-              </div>
-              <div className="text-xs text-muted-foreground">{t('common:labels.notStarted')}</div>
-            </div>
+          <div className="flex items-center gap-2">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'timeline' | 'kanban')}>
+              <TabsList className="h-8">
+                <TabsTrigger value="timeline" className="text-xs px-3">
+                  {t('navigation:gsd.timeline')}
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="text-xs px-3">
+                  {t('navigation:gsd.teamKanban')}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 
-        {/* Timeline View */}
-        <TimelineView
-          phases={roadmap.phases}
-          currentPhase={roadmap.current_phase}
-          onPhaseClick={(phase) => {
-            const newExpanded = new Set(expandedPhases);
-            if (newExpanded.has(phase.number)) {
-              newExpanded.delete(phase.number);
-            } else {
-              newExpanded.add(phase.number);
-            }
-            setExpandedPhases(newExpanded);
+        {/* Timeline View Tab */}
+        {activeTab === 'timeline' && (
+          <>
+            {/* Progress Summary Row */}
+            <div className="flex items-center gap-6 mb-4">
+              {/* Progress Ring */}
+              <ProgressRing progress={roadmap.progress_percent} size={80}>
+                <div className="text-center">
+                  <span className="text-xl font-bold">{roadmap.progress_percent}%</span>
+                  <div className="text-[10px] text-muted-foreground">
+                    {roadmap.phases.filter(p => p.status === 'complete').length}/{roadmap.total_phases}
+                  </div>
+                </div>
+              </ProgressRing>
 
-            // Scroll to phase
-            document.getElementById(`phase-${phase.number}`)?.scrollIntoView({
-              behavior: 'smooth'
-            });
-          }}
-        />
+              {/* Stats Grid */}
+              <div className="flex-1 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {roadmap.phases.filter(p => p.status === 'complete').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t('common:labels.complete')}</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {roadmap.phases.filter(p => p.status === 'in_progress').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t('common:labels.inProgress')}</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-gray-400">
+                    {roadmap.phases.filter(p => p.status === 'not_started').length}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{t('common:labels.notStarted')}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timeline View */}
+            <TimelineView
+              phases={roadmap.phases}
+              currentPhase={roadmap.current_phase}
+              onPhaseClick={(phase) => {
+                const newExpanded = new Set(expandedPhases);
+                if (newExpanded.has(phase.number)) {
+                  newExpanded.delete(phase.number);
+                } else {
+                  newExpanded.add(phase.number);
+                }
+                setExpandedPhases(newExpanded);
+
+                // Scroll to phase
+                document.getElementById(`phase-${phase.number}`)?.scrollIntoView({
+                  behavior: 'smooth'
+                });
+              }}
+            />
+          </>
+        )}
+
+        {/* Kanban View Tab */}
+        {activeTab === 'kanban' && board && (
+          <TeamKanbanView board={board} onTaskClick={handleTaskClick} />
+        )}
+
+        {activeTab === 'kanban' && !board && (
+          <div className="flex items-center justify-center h-32 text-muted-foreground">
+            <p>{t('navigation:gsd.noKanbanData')}</p>
+          </div>
+        )}
       </div>
 
       {/* Phase list */}
