@@ -61,7 +61,22 @@
     "noKanbanData": "No team kanban data available",
     "teamTasks": "Team Tasks",
     "blocked": "Blocking",
-    "waiting": "Waiting"
+    "waiting": "Waiting",
+    "dashboard": "Dashboard",
+    "noContextData": "No leader context available",
+    "goals": "Goals",
+    "decisions": "Decisions",
+    "risks": "Risks",
+    "patterns": "Patterns",
+    "recentMistakes": "Recent Mistakes",
+    "active": "active",
+    "total": "total",
+    "found": "found",
+    "noGoals": "No goals defined",
+    "noDecisions": "No decisions recorded",
+    "noRisks": "No risks identified",
+    "noPatterns": "No patterns detected",
+    "lesson": "Lesson"
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",

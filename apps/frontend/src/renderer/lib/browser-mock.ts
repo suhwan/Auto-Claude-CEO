@@ -392,6 +392,10 @@ const browserMockAPI: ElectronAPI = {
     getSharedBoard: async () => ({
       success: true,
       data: null
+    }),
+    getLeaderContext: async () => ({
+      success: true,
+      data: null
     })
   },
 

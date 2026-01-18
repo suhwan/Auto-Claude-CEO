@@ -61,7 +61,22 @@
     "noKanbanData": "Aucune donnée kanban d'équipe disponible",
     "teamTasks": "Tâches d'équipe",
     "blocked": "Bloquant",
-    "waiting": "En attente"
+    "waiting": "En attente",
+    "dashboard": "Tableau de bord",
+    "noContextData": "Aucun contexte de leader disponible",
+    "goals": "Objectifs",
+    "decisions": "Décisions",
+    "risks": "Risques",
+    "patterns": "Modèles",
+    "recentMistakes": "Erreurs Récentes",
+    "active": "actif",
+    "total": "total",
+    "found": "trouvé",
+    "noGoals": "Aucun objectif défini",
+    "noDecisions": "Aucune décision enregistrée",
+    "noRisks": "Aucun risque identifié",
+    "noPatterns": "Aucun modèle détecté",
+    "lesson": "Leçon"
   },
   "claudeCode": {
     "checking": "Vérification de Claude Code...",
