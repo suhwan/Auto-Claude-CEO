@@ -55,7 +55,13 @@
     "outputFiles": "Fichiers de Sortie",
     "verification": "Vérification",
     "dependsOn": "Dépend de",
-    "estimatedTime": "Temps Estimé"
+    "estimatedTime": "Temps Estimé",
+    "timeline": "Chronologie",
+    "teamKanban": "Kanban Équipe",
+    "noKanbanData": "Aucune donnée kanban d'équipe disponible",
+    "teamTasks": "Tâches d'équipe",
+    "blocked": "Bloquant",
+    "waiting": "En attente"
   },
   "claudeCode": {
     "checking": "Vérification de Claude Code...",

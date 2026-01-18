@@ -55,7 +55,13 @@
     "outputFiles": "Output Files",
     "verification": "Verification",
     "dependsOn": "Depends On",
-    "estimatedTime": "Estimated Time"
+    "estimatedTime": "Estimated Time",
+    "timeline": "Timeline",
+    "teamKanban": "Team Kanban",
+    "noKanbanData": "No team kanban data available",
+    "teamTasks": "Team Tasks",
+    "blocked": "Blocking",
+    "waiting": "Waiting"
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",
