@@ -19,9 +19,10 @@ import type {
   GsdStateInfo,
   GsdPlanDetail,
   GsdSharedBoard,
-  GsdTeamTask
+  GsdTeamTask,
+  GsdLeaderContext
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView } from './gsd';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard } from './gsd';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -44,7 +45,10 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // Kanban view state
   const [board, setBoard] = useState<GsdSharedBoard | null>(null);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'kanban'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'kanban' | 'dashboard'>('timeline');
+
+  // Leader Context state
+  const [leaderContext, setLeaderContext] = useState<GsdLeaderContext | null>(null);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -86,6 +90,17 @@ export function GsdView({ projectPath }: GsdViewProps) {
       } catch {
         // SharedBoard is optional, don't error if missing
         console.debug('SharedBoard not available');
+      }
+
+      // Load LeaderContext for Dashboard view (optional)
+      try {
+        const contextResult = await window.electronAPI.gsd.getLeaderContext(projectPath);
+        if (contextResult.success && contextResult.data) {
+          setLeaderContext(contextResult.data);
+        }
+      } catch {
+        // LeaderContext is optional, don't error if missing
+        console.debug('LeaderContext not available');
       }
     } catch (err) {
       console.error('Failed to load GSD data:', err);
@@ -262,13 +277,16 @@ export function GsdView({ projectPath }: GsdViewProps) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('navigation:gsd.title')}</h2>
           <div className="flex items-center gap-2">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'timeline' | 'kanban')}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'timeline' | 'kanban' | 'dashboard')}>
               <TabsList className="h-8">
                 <TabsTrigger value="timeline" className="text-xs px-3">
                   {t('navigation:gsd.timeline')}
                 </TabsTrigger>
                 <TabsTrigger value="kanban" className="text-xs px-3">
                   {t('navigation:gsd.teamKanban')}
+                </TabsTrigger>
+                <TabsTrigger value="dashboard" className="text-xs px-3">
+                  {t('navigation:gsd.dashboard')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -351,6 +369,17 @@ export function GsdView({ projectPath }: GsdViewProps) {
         {activeTab === 'kanban' && !board && (
           <div className="flex items-center justify-center h-32 text-muted-foreground">
             <p>{t('navigation:gsd.noKanbanData')}</p>
+          </div>
+        )}
+
+        {/* Dashboard View Tab */}
+        {activeTab === 'dashboard' && leaderContext && (
+          <LeaderDashboard context={leaderContext} />
+        )}
+
+        {activeTab === 'dashboard' && !leaderContext && (
+          <div className="flex items-center justify-center h-32 text-muted-foreground">
+            <p>{t('navigation:gsd.noContextData')}</p>
           </div>
         )}
       </div>
