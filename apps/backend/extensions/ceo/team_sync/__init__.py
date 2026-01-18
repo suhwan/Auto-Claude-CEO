@@ -9,23 +9,20 @@ This module provides:
 - Sync Types: Barrier, Wait, Signal, Gate
 - Event Logging: Audit trail for sync point lifecycle
 - Shared Board: Visual dashboard for team coordination
+- Leader Meeting: Automated meeting management
 
 Storage Locations:
 - Sync Points: `.planning/team_sync/sync_points/`
 - Shared Board: `.planning/team_sync/shared_board/`
+- Meetings: `.planning/team_sync/meetings/`
+
+Key Features:
+- Sync Points: Team synchronization barriers and signals
+- Shared Board: Task tracking and blocker management
+- Leader Meeting: Automatic agenda and action item tracking
 """
 
-from .board_manager import SharedBoardManager
-from .board_models import (
-    BlockerType,
-    Blocker,
-    BoardTask,
-    DependencyEdge,
-    SharedBoard,
-    TaskStatus,
-    TeamLane,
-)
-from .board_serializer import BoardSerializer
+# Sync Points
 from .models import (
     SyncCondition,
     SyncEvent,
@@ -36,6 +33,35 @@ from .models import (
 )
 from .serializer import SyncPointSerializer
 from .sync_manager import SyncPointManager
+
+# Shared Board
+from .board_models import (
+    BlockerType,
+    Blocker,
+    BoardTask,
+    DependencyEdge,
+    SharedBoard,
+    TaskStatus,
+    TeamLane,
+)
+from .board_serializer import BoardSerializer
+from .board_manager import SharedBoardManager
+
+# Leader Meeting
+from .meeting_models import (
+    ActionItem,
+    AgendaItem,
+    Meeting,
+    MeetingMinutes,
+    MeetingParticipant,
+    MeetingSchedule,
+    MeetingStatus,
+    MeetingType,
+)
+from .meeting_manager import MeetingManager
+
+# Service
+from .service import TeamSyncService
 
 __all__ = [
     # Sync Point Enums
@@ -63,4 +89,18 @@ __all__ = [
     "SharedBoardManager",
     # Shared Board Serializer
     "BoardSerializer",
+    # Leader Meeting Enums
+    "MeetingType",
+    "MeetingStatus",
+    # Leader Meeting Models
+    "AgendaItem",
+    "ActionItem",
+    "MeetingParticipant",
+    "MeetingMinutes",
+    "Meeting",
+    "MeetingSchedule",
+    # Leader Meeting Manager
+    "MeetingManager",
+    # Service
+    "TeamSyncService",
 ]
