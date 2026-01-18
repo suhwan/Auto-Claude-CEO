@@ -204,5 +204,23 @@ export function setupGsdHandlers(): void {
     }
   );
 
+  /**
+   * Get LeaderContext for CEO Dashboard
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_LEADER_CONTEXT,
+    async (_event: IpcMainInvokeEvent, projectPath: string, phase?: number): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getLeaderContext', { projectPath, phase });
+        const gsdService = getGsdService(projectPath);
+        const context = await gsdService.getLeaderContext(phase);
+        return { success: true, data: context };
+      } catch (error) {
+        logger.error('gsd:getLeaderContext failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
   logger.info('[GSD] IPC handlers registered');
 }

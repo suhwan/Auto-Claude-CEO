@@ -196,6 +196,80 @@ export interface GsdSharedBoard {
 }
 
 /**
+ * GSD Goal (for Leader Dashboard)
+ */
+export interface GsdGoal {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'primary' | 'secondary' | 'tertiary';
+  status: 'active' | 'achieved' | 'abandoned';
+  phase?: number;
+}
+
+/**
+ * GSD Decision (for Leader Dashboard)
+ */
+export interface GsdDecision {
+  id: string;
+  title: string;
+  description: string;
+  rationale: string;
+  made_at: string;
+  phase?: number;
+}
+
+/**
+ * GSD Pattern (for Leader Dashboard)
+ */
+export interface GsdPattern {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  occurrences: number;
+}
+
+/**
+ * GSD Mistake (for Leader Dashboard)
+ */
+export interface GsdMistake {
+  id: string;
+  description: string;
+  impact: string;
+  lesson_learned: string;
+  occurred_at: string;
+  phase?: number;
+}
+
+/**
+ * GSD Risk (for Leader Dashboard)
+ */
+export interface GsdRisk {
+  id: string;
+  title: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  likelihood: 'unlikely' | 'possible' | 'likely' | 'certain';
+  mitigation?: string;
+  status: 'identified' | 'mitigated' | 'occurred' | 'closed';
+}
+
+/**
+ * GSD Leader Context (for CEO Dashboard)
+ */
+export interface GsdLeaderContext {
+  project_id: string;
+  phase: number;
+  goals: GsdGoal[];
+  decisions: GsdDecision[];
+  patterns: GsdPattern[];
+  mistakes: GsdMistake[];
+  risks: GsdRisk[];
+  updated_at: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -209,6 +283,7 @@ export interface GsdAPI {
   generateSummary: (projectPath: string, planPath: string) => Promise<IPCResult<{ summaryPath: string | null }>>;
   getSyncStatus: (projectPath: string) => Promise<IPCResult<GsdSyncStatus>>;
   getSharedBoard: (projectPath: string, phase?: number) => Promise<IPCResult<GsdSharedBoard | null>>;
+  getLeaderContext: (projectPath: string, phase?: number) => Promise<IPCResult<GsdLeaderContext | null>>;
 }
 
 /**
@@ -243,5 +318,8 @@ export const createGsdAPI = (): GsdAPI => ({
     invokeIpc(IPC_CHANNELS.GSD_GET_SYNC_STATUS, projectPath),
 
   getSharedBoard: (projectPath: string, phase?: number): Promise<IPCResult<GsdSharedBoard | null>> =>
-    invokeIpc(IPC_CHANNELS.GSD_GET_SHARED_BOARD, projectPath, phase)
+    invokeIpc(IPC_CHANNELS.GSD_GET_SHARED_BOARD, projectPath, phase),
+
+  getLeaderContext: (projectPath: string, phase?: number): Promise<IPCResult<GsdLeaderContext | null>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_LEADER_CONTEXT, projectPath, phase)
 });
