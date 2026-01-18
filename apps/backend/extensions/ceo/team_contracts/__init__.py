@@ -15,16 +15,23 @@ This module provides:
 - UI-specific models (PropDefinition, EventDefinition, SlotDefinition, UIContract)
 - Data-specific models (FieldDefinition, DataContract)
 - JSON serialization utilities (ContractSerializer)
+- Registry for contract storage and retrieval
+- Version management for semantic versioning
+- Validation and compatibility checking
+- Change notification system
+- Unified service facade
 
 Storage location: `.planning/contracts/`
 File format: JSON Schema based
 
 Example usage:
     from extensions.ceo.team_contracts import (
-        ContractType, ContractStatus, ContractVersion,
-        ContractOwner, APIContract, APIEndpoint,
-        ContractSerializer
+        TeamContractService, ContractType, ContractStatus,
+        ContractVersion, ContractOwner, APIContract, APIEndpoint
     )
+
+    # Create service instance
+    service = TeamContractService('/path/to/project')
 
     # Create an API contract
     owner = ContractOwner("dev-team", "Development Team")
@@ -41,8 +48,17 @@ Example usage:
         ]
     )
 
-    # Serialize to JSON
-    json_str = ContractSerializer.to_json(api)
+    # Create contract (validates and registers)
+    result = service.create_contract(api)
+
+    # Add a consumer
+    service.add_consumer("api-001", "frontend-team", "Frontend Team")
+
+    # Update contract with notifications
+    service.update_contract("api-001", {"description": "Updated"}, "patch")
+
+    # Get team dashboard
+    dashboard = service.get_team_dashboard("dev-team")
 """
 
 from .models import (
@@ -68,6 +84,17 @@ from .serializer import ContractSerializer
 from .registry import ContractRegistry
 from .version_manager import ContractVersionManager
 from .validator import ContractValidator
+from .notification_models import (
+    Notification,
+    NotificationPriority,
+    NotificationRecipient,
+    NotificationStatus,
+    NotificationSubscription,
+    NotificationType,
+)
+from .watcher import ContractWatcher
+from .notification_service import NotificationService
+from .service import TeamContractService
 
 __all__ = [
     # Enums
@@ -100,4 +127,17 @@ __all__ = [
     "ContractVersionManager",
     # Validator
     "ContractValidator",
+    # Notification Models
+    "NotificationType",
+    "NotificationPriority",
+    "NotificationStatus",
+    "NotificationRecipient",
+    "Notification",
+    "NotificationSubscription",
+    # Watcher
+    "ContractWatcher",
+    # Notification Service
+    "NotificationService",
+    # Unified Service
+    "TeamContractService",
 ]
