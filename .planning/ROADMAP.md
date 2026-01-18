@@ -19,7 +19,7 @@ None (커스텀 통합 프로젝트)
 - [x] **Phase 3: GSD Converter** - PLAN.md → implementation_plan.json 변환기 ✓
 - [x] **Phase 4: CEO Router** - CEO 라우터 통합 (코딩/비코딩 분배) ✓
 - [x] **Phase 5: Leader Context** - Leader Context Model 구현 ✓
-- [ ] **Phase 6: Leader Checkpoints** - Subtask 체크포인트, 에러 로그, 리뷰
+- [x] **Phase 6: Leader Checkpoints** - Subtask 체크포인트, 에러 로그, 리뷰 ✓
 - [ ] **Phase 7: Team Contracts** - Shared Contracts (API/UI/데이터 스펙)
 - [ ] **Phase 8: Team Sync** - Sync Points, Shared Board, Leader Meeting
 - [ ] **Phase 9: UI GSD Tab** - Auto-Claude UI에 GSD 탭 추가
@@ -93,9 +93,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 06-01: 체크포인트 트리거 구현
-- [ ] 06-02: 에러 로그 시스템
-- [ ] 06-03: 리뷰 및 개선점 기록
+- [x] 06-01: 체크포인트 트리거 구현 ✓
+- [x] 06-02: 에러 로그 시스템 ✓
+- [x] 06-03: 리뷰 및 개선점 기록 ✓
 
 ### Phase 7: Team Contracts
 **Goal**: Shared Contracts (API 스펙, UI 스펙, 데이터 모델)
@@ -156,7 +156,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 3. GSD Converter | 3/3 | Complete ✓ | 2025-01-15 |
 | 4. CEO Router | 3/3 | Complete ✓ | 2025-01-18 |
 | 5. Leader Context | 3/3 | Complete ✓ | 2025-01-18 |
-| 6. Leader Checkpoints | 0/3 | Not started | - |
+| 6. Leader Checkpoints | 3/3 | Complete ✓ | 2025-01-18 |
 | 7. Team Contracts | 0/3 | Not started | - |
 | 8. Team Sync | 0/3 | Not started | - |
 | 9. UI GSD Tab | 0/3 | Not started | - |

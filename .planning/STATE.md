@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2025-01-15)
 
 **Core value:** 사용자는 관리자만 한다. 계획, 분배, 실행, 검증 모두 시스템이 처리.
-**Current focus:** Phase 6 — Leader Checkpoints
+**Current focus:** Phase 7 — Team Contracts
 
 ## Current Position
 
-Phase: 5 of 10 (Leader Context) ✓ COMPLETE
+Phase: 6 of 10 (Leader Checkpoints) ✓ COMPLETE
 Plan: 3/3 completed
-Status: Ready for Phase 6
-Last activity: 2025-01-18 — Phase 5 Leader Context completed
+Status: Ready for Phase 7
+Last activity: 2025-01-18 — Phase 6 Leader Checkpoints completed
 
-Progress: █████░░░░░ 50%
+Progress: ██████░░░░ 60%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 18
 - Average duration: ~7 min
-- Total execution time: ~100 min
+- Total execution time: ~125 min
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: █████░░░░░ 50%
 | 3. GSD Converter | 3/3 | ~20 min | ~7 min |
 | 4. CEO Router | 3/3 | ~20 min | ~7 min (parallel) |
 | 5. Leader Context | 3/3 | ~25 min | ~8 min (sequential) |
+| 6. Leader Checkpoints | 3/3 | ~25 min | ~8 min (sequential) |
 
 **Recent Trend:**
-- Last 5 plans: 04-01 ✓, 04-02 ✓, 04-03 ✓, 05-01 ✓, 05-02 ✓, 05-03 ✓
-- Trend: Stable (Wave 3 sequential execution)
+- Last 6 plans: 05-01 ✓, 05-02 ✓, 05-03 ✓, 06-01 ✓, 06-02 ✓, 06-03 ✓
+- Trend: Stable (Wave 4 sequential execution)
 
 ## Phase 1 Outputs
 
@@ -149,6 +150,15 @@ Recent decisions affecting current work:
 5. **Query API**: 목표/결정/패턴/실수/위험별 조회, 통합 검색
 6. **Service Layer**: LeaderContextService로 전체 API 통합
 
+### Key Findings from Phase 6
+
+1. **Checkpoint Triggers**: 7가지 트리거 유형 (subtask, error, decision, periodic, explicit, phase_start, phase_end)
+2. **CheckpointManager**: 자동 체크포인트 생성, 복원, 정리 기능
+3. **Error Logging**: 심각도/카테고리 분류, 패턴 감지, 해결 제안
+4. **ErrorLogger**: 동일 에러 그룹화, 빈도 추적, 요약 통계
+5. **Review System**: 자동 리뷰 생성, 학습 포인트 추출
+6. **LeaderCheckpointService**: 통합 API (start_phase, complete_subtask, log_error, end_phase)
+
 ### Deferred Issues
 
 None yet.
@@ -163,27 +173,27 @@ Last session: 2025-01-15
 Stopped at: Phase 3 complete, ready for Phase 4
 Resume file: None
 
-## Phase 5 Outputs
+## Phase 6 Outputs
 
-### 05-01: Context Model 스키마 정의
-- `extensions/ceo/leader_context/models.py` - 8개 dataclass (Goal, Decision, Pattern, Mistake, FileMapping, Dependency, Risk, LeaderContext)
-- `extensions/ceo/leader_context/serializer.py` - LeaderContextSerializer (JSON 직렬화)
-- `extensions/ceo/leader_context/validator.py` - ContextValidator (유효성 검사)
-- `05-01-SUMMARY.md` - 완료 문서
+### 06-01: 체크포인트 트리거 구현
+- `extensions/ceo/leader_checkpoints/models.py` - CheckpointTrigger, CheckpointConfig, Checkpoint
+- `extensions/ceo/leader_checkpoints/manager.py` - CheckpointManager
+- `extensions/ceo/leader_checkpoints/serializer.py` - CheckpointSerializer
+- `06-01-SUMMARY.md` - 완료 문서
 
-### 05-02: Context 저장/로드 구현
-- `extensions/ceo/leader_context/storage.py` - ContextStorage (파일 영속화)
-- `extensions/ceo/leader_context/merger.py` - ContextMerger (병합/diff)
-- `extensions/ceo/leader_context/initializer.py` - ContextInitializer (초기화)
-- `05-02-SUMMARY.md` - 완료 문서
+### 06-02: 에러 로그 시스템
+- `extensions/ceo/leader_checkpoints/error_models.py` - ErrorSeverity, ErrorCategory, ErrorLog, ErrorPattern
+- `extensions/ceo/leader_checkpoints/error_logger.py` - ErrorLogger
+- `extensions/ceo/leader_checkpoints/error_serializer.py` - ErrorLogSerializer
+- `06-02-SUMMARY.md` - 완료 문서
 
-### 05-03: Context 조회 API
-- `extensions/ceo/leader_context/query.py` - ContextQuery (조회 메서드)
-- `extensions/ceo/leader_context/service.py` - LeaderContextService (통합 서비스)
-- `extensions/ceo/leader_context/__init__.py` - 모듈 export
-- `05-03-SUMMARY.md` - 완료 문서
+### 06-03: 리뷰 및 개선점 기록
+- `extensions/ceo/leader_checkpoints/review_models.py` - ReviewType, Review, LearningPoint
+- `extensions/ceo/leader_checkpoints/review_generator.py` - ReviewGenerator
+- `extensions/ceo/leader_checkpoints/service.py` - LeaderCheckpointService
+- `06-03-SUMMARY.md` - 완료 문서
 
 ## Next Steps
 
-1. Plan Phase 6: `/gsd:plan-phase 6`
-2. Execute Phase 6: `/gsd:execute-phase 6`
+1. Plan Phase 7: `/gsd:plan-phase 7`
+2. Execute Phase 7: `/gsd:execute-phase 7`
