@@ -20,7 +20,7 @@ None (커스텀 통합 프로젝트)
 - [x] **Phase 4: CEO Router** - CEO 라우터 통합 (코딩/비코딩 분배) ✓
 - [x] **Phase 5: Leader Context** - Leader Context Model 구현 ✓
 - [x] **Phase 6: Leader Checkpoints** - Subtask 체크포인트, 에러 로그, 리뷰 ✓
-- [ ] **Phase 7: Team Contracts** - Shared Contracts (API/UI/데이터 스펙)
+- [x] **Phase 7: Team Contracts** - Shared Contracts (API/UI/데이터 스펙) ✓
 - [ ] **Phase 8: Team Sync** - Sync Points, Shared Board, Leader Meeting
 - [ ] **Phase 9: UI GSD Tab** - Auto-Claude UI에 GSD 탭 추가
 - [ ] **Phase 10: UI Dashboard** - 팀별 칸반 레인, 리더 대시보드
@@ -105,9 +105,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 07-01: Contract 스키마 정의
-- [ ] 07-02: Contract 저장소 구현
-- [ ] 07-03: 변경 알림 시스템
+- [x] 07-01: Contract 스키마 정의 ✓
+- [x] 07-02: Contract 저장소 구현 ✓
+- [x] 07-03: 변경 알림 시스템 ✓
 
 ### Phase 8: Team Sync
 **Goal**: Sync Points, Shared Board, Leader Meeting 시스템
@@ -157,7 +157,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 →
 | 4. CEO Router | 3/3 | Complete ✓ | 2025-01-18 |
 | 5. Leader Context | 3/3 | Complete ✓ | 2025-01-18 |
 | 6. Leader Checkpoints | 3/3 | Complete ✓ | 2025-01-18 |
-| 7. Team Contracts | 0/3 | Not started | - |
+| 7. Team Contracts | 3/3 | Complete ✓ | 2025-01-18 |
 | 8. Team Sync | 0/3 | Not started | - |
 | 9. UI GSD Tab | 0/3 | Not started | - |
 | 10. UI Dashboard | 0/3 | Not started | - |
