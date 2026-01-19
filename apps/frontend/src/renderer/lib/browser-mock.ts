@@ -396,6 +396,14 @@ const browserMockAPI: ElectronAPI = {
     getLeaderContext: async () => ({
       success: true,
       data: null
+    }),
+    getPendingVerifications: async () => ({
+      success: true,
+      data: []
+    }),
+    submitVerification: async () => ({
+      success: true,
+      data: undefined
     })
   },
 
