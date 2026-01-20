@@ -7,6 +7,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawn, ChildProcess, execSync } from 'child_process';
+import { EventEmitter } from 'events';
 import { logger } from './app-logger';
 
 export interface GsdRoadmapInfo {
@@ -243,11 +245,141 @@ export interface CreateProjectInput {
   coreValue?: string;
 }
 
+export interface GenerateRoadmapInput {
+  goals: string;
+  depth: 'quick' | 'standard' | 'comprehensive';
+}
+
+export interface StreamEvent {
+  type: 'output' | 'error' | 'complete';
+  data: string;
+}
+
 export interface CreateProjectResult {
   success: boolean;
   projectPath: string;
   filesCreated: string[];
   error?: string;
+}
+
+/**
+ * RoadmapGenerator - Generates roadmap using Claude Code CLI
+ *
+ * Spawns Claude CLI process and streams output for real-time feedback
+ */
+export class RoadmapGenerator extends EventEmitter {
+  private process: ChildProcess | null = null;
+  private projectPath: string;
+
+  constructor(projectPath: string) {
+    super();
+    this.projectPath = projectPath;
+  }
+
+  async generate(input: GenerateRoadmapInput): Promise<void> {
+    const depthMap = {
+      quick: '3-5 phases',
+      standard: '5-8 phases',
+      comprehensive: '8-12 phases'
+    };
+
+    const prompt = `You are creating a project roadmap.
+
+Project Goals:
+${input.goals}
+
+Requirements:
+- Create ${depthMap[input.depth]}
+- Each phase should have a clear goal
+- Phases should be logically ordered
+- Output format: Update the .planning/ROADMAP.md file
+
+Create the roadmap now by writing to .planning/ROADMAP.md`;
+
+    // Find Claude CLI path
+    const claudePath = await this.findClaudePath();
+
+    if (!claudePath) {
+      this.emit('error', 'Claude Code CLI not found. Please install it first.');
+      this.emit('complete', false);
+      return;
+    }
+
+    logger.info('[RoadmapGenerator] Starting Claude CLI', { claudePath, projectPath: this.projectPath });
+
+    // Spawn Claude process
+    this.process = spawn(claudePath, [
+      '--print', prompt,
+      '--allowedTools', 'Read,Write,Glob,Grep',
+      '--max-turns', '10'
+    ], {
+      cwd: this.projectPath,
+      env: { ...process.env },
+      shell: true
+    });
+
+    this.process.stdout?.on('data', (data: Buffer) => {
+      const text = data.toString();
+      logger.debug('[RoadmapGenerator] stdout:', text);
+      this.emit('output', text);
+    });
+
+    this.process.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString();
+      logger.debug('[RoadmapGenerator] stderr:', text);
+      this.emit('output', text);
+    });
+
+    this.process.on('close', (code: number | null) => {
+      logger.info('[RoadmapGenerator] Process closed', { code });
+      this.emit('complete', code === 0);
+    });
+
+    this.process.on('error', (err: Error) => {
+      logger.error('[RoadmapGenerator] Process error:', err);
+      this.emit('error', err.message);
+      this.emit('complete', false);
+    });
+  }
+
+  cancel(): void {
+    if (this.process) {
+      logger.info('[RoadmapGenerator] Cancelling process');
+      this.process.kill();
+      this.process = null;
+    }
+  }
+
+  private async findClaudePath(): Promise<string | null> {
+    try {
+      // Try 'where' on Windows, 'which' on Unix
+      const cmd = process.platform === 'win32' ? 'where claude' : 'which claude';
+      const result = execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0];
+      logger.debug('[RoadmapGenerator] Found claude at:', result);
+      return result || null;
+    } catch {
+      // Check common paths
+      const commonPaths = process.platform === 'win32'
+        ? [
+            `${process.env.APPDATA}\\npm\\claude.cmd`,
+            `${process.env.LOCALAPPDATA}\\Programs\\claude\\claude.exe`
+          ]
+        : [
+            '/usr/local/bin/claude',
+            `${process.env.HOME}/.local/bin/claude`
+          ];
+
+      for (const p of commonPaths) {
+        if (fs.existsSync(p)) {
+          logger.debug('[RoadmapGenerator] Found claude at common path:', p);
+          return p;
+        }
+      }
+
+      logger.warn('[RoadmapGenerator] Claude CLI not found');
+      return null;
+    }
+  }
 }
 
 export class GsdService {
@@ -1581,5 +1713,12 @@ No phases defined yet. Use "Create Roadmap" to generate phases.
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Create a RoadmapGenerator instance for this project
+   */
+  createRoadmapGenerator(): RoadmapGenerator {
+    return new RoadmapGenerator(this.projectPath);
   }
 }
