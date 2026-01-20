@@ -265,5 +265,27 @@ export function setupGsdHandlers(): void {
     }
   );
 
+  /**
+   * Create a new GSD project
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_CREATE_PROJECT,
+    async (
+      _event: IpcMainInvokeEvent,
+      projectPath: string,
+      input: { name: string; description: string; coreValue?: string }
+    ): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:createProject', { projectPath, name: input.name });
+        const gsdService = getGsdService(projectPath);
+        const result = await gsdService.createProject(input);
+        return { success: result.success, data: result, error: result.error };
+      } catch (error) {
+        logger.error('gsd:createProject failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
   logger.info('[GSD] IPC handlers registered');
 }

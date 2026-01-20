@@ -298,6 +298,25 @@ export interface GsdPlanVerification {
 }
 
 /**
+ * Input for creating a new GSD project
+ */
+export interface CreateProjectInput {
+  name: string;
+  description: string;
+  coreValue?: string;
+}
+
+/**
+ * Result of creating a new GSD project
+ */
+export interface CreateProjectResult {
+  success: boolean;
+  projectPath: string;
+  filesCreated: string[];
+  error?: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -320,6 +339,7 @@ export interface GsdAPI {
     feedback?: string,
     checklist?: GsdVerificationItem[]
   ) => Promise<IPCResult<void>>;
+  createProject: (projectPath: string, input: CreateProjectInput) => Promise<IPCResult<CreateProjectResult>>;
 }
 
 /**
@@ -369,5 +389,8 @@ export const createGsdAPI = (): GsdAPI => ({
     feedback?: string,
     checklist?: GsdVerificationItem[]
   ): Promise<IPCResult<void>> =>
-    invokeIpc(IPC_CHANNELS.GSD_SUBMIT_VERIFICATION, projectPath, planId, approved, feedback, checklist)
+    invokeIpc(IPC_CHANNELS.GSD_SUBMIT_VERIFICATION, projectPath, planId, approved, feedback, checklist),
+
+  createProject: (projectPath: string, input: CreateProjectInput): Promise<IPCResult<CreateProjectResult>> =>
+    invokeIpc(IPC_CHANNELS.GSD_CREATE_PROJECT, projectPath, input)
 });

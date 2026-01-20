@@ -536,6 +536,7 @@ export const IPC_CHANNELS = {
   GSD_GET_LEADER_CONTEXT: 'gsd:getLeaderContext',
   GSD_GET_PENDING_VERIFICATIONS: 'gsd:getPendingVerifications',
   GSD_SUBMIT_VERIFICATION: 'gsd:submitVerification',
+  GSD_CREATE_PROJECT: 'gsd:createProject',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',
