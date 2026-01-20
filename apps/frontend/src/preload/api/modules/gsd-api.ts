@@ -325,6 +325,21 @@ export interface CreateProjectResult {
 }
 
 /**
+ * Input for planning a phase
+ */
+export interface PlanPhaseInput {
+  phaseNumber: number;
+  additionalContext?: string;
+}
+
+/**
+ * Input for executing a plan
+ */
+export interface ExecutePlanInput {
+  planPath: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -353,6 +368,23 @@ export interface GsdAPI {
   onRoadmapOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
   onRoadmapError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
   onRoadmapComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
+
+  // Plan/Execute operations
+  planPhase: (projectPath: string, input: PlanPhaseInput) => Promise<IPCResult<{ generatorId: string }>>;
+  executePlan: (projectPath: string, input: ExecutePlanInput) => Promise<IPCResult<{ generatorId: string }>>;
+  cancelPlan: (generatorId: string) => Promise<IPCResult<void>>;
+
+  // Plan event listeners
+  onPlanOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
+  onPlanProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void) => () => void;
+  onPlanError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
+  onPlanComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
+
+  // Execute event listeners
+  onExecuteOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
+  onExecuteProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void) => () => void;
+  onExecuteError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
+  onExecuteComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
 }
 
 /**
@@ -429,5 +461,65 @@ export const createGsdAPI = (): GsdAPI => ({
     const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
     window.electronAPI?.ipcRenderer?.on('gsd:roadmap-complete', handler);
     return () => window.electronAPI?.ipcRenderer?.off('gsd:roadmap-complete', handler);
+  },
+
+  // Plan/Execute operations
+  planPhase: (projectPath: string, input: PlanPhaseInput): Promise<IPCResult<{ generatorId: string }>> =>
+    invokeIpc(IPC_CHANNELS.GSD_PLAN_PHASE, projectPath, input),
+
+  executePlan: (projectPath: string, input: ExecutePlanInput): Promise<IPCResult<{ generatorId: string }>> =>
+    invokeIpc(IPC_CHANNELS.GSD_EXECUTE_PLAN, projectPath, input),
+
+  cancelPlan: (generatorId: string): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_CANCEL_PLAN, generatorId),
+
+  // Plan event listeners
+  onPlanOutput: (callback: (data: { generatorId: string; data: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; data: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:plan-output', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:plan-output', handler);
+  },
+
+  onPlanProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; current: number; total: number }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:plan-progress', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:plan-progress', handler);
+  },
+
+  onPlanError: (callback: (data: { generatorId: string; error: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; error: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:plan-error', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:plan-error', handler);
+  },
+
+  onPlanComplete: (callback: (data: { generatorId: string; success: boolean }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:plan-complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:plan-complete', handler);
+  },
+
+  // Execute event listeners
+  onExecuteOutput: (callback: (data: { generatorId: string; data: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; data: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:execute-output', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:execute-output', handler);
+  },
+
+  onExecuteProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; current: number; total: number }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:execute-progress', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:execute-progress', handler);
+  },
+
+  onExecuteError: (callback: (data: { generatorId: string; error: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; error: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:execute-error', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:execute-error', handler);
+  },
+
+  onExecuteComplete: (callback: (data: { generatorId: string; success: boolean }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:execute-complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:execute-complete', handler);
   }
 });
