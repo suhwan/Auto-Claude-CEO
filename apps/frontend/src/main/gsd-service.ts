@@ -245,6 +245,15 @@ export interface CreateProjectInput {
   coreValue?: string;
 }
 
+export interface PlanPhaseInput {
+  phaseNumber: number;
+  additionalContext?: string;
+}
+
+export interface ExecutePlanInput {
+  planPath: string;
+}
+
 export interface GenerateRoadmapInput {
   goals: string;
   depth: 'quick' | 'standard' | 'comprehensive';
@@ -377,6 +386,156 @@ Create the roadmap now by writing to .planning/ROADMAP.md`;
       }
 
       logger.warn('[RoadmapGenerator] Claude CLI not found');
+      return null;
+    }
+  }
+}
+
+/**
+ * PlanGenerator - Generates and executes plans using Claude Code CLI
+ *
+ * Spawns Claude CLI process for /gsd:plan-phase and /gsd:execute-plan commands
+ */
+export class PlanGenerator extends EventEmitter {
+  private process: ChildProcess | null = null;
+  private projectPath: string;
+
+  constructor(projectPath: string) {
+    super();
+    this.projectPath = projectPath;
+  }
+
+  async planPhase(input: PlanPhaseInput): Promise<void> {
+    const claudePath = await this.findClaudePath();
+
+    if (!claudePath) {
+      this.emit('error', 'Claude Code CLI not found. Please install it first.');
+      this.emit('complete', false);
+      return;
+    }
+
+    // Build the command
+    let command = `/gsd:plan-phase ${input.phaseNumber}`;
+    if (input.additionalContext) {
+      // Escape quotes in the additional context
+      const escapedContext = input.additionalContext.replace(/"/g, '\\"');
+      command += ` "${escapedContext}"`;
+    }
+
+    logger.info('[PlanGenerator] Starting plan-phase', { command, projectPath: this.projectPath });
+
+    this.process = spawn(claudePath, [
+      '--print', command,
+      '--allowedTools', 'Read,Write,Glob,Grep,Task',
+      '--max-turns', '30'
+    ], {
+      cwd: this.projectPath,
+      env: { ...process.env },
+      shell: true
+    });
+
+    this.setupProcessHandlers();
+  }
+
+  async executePlan(input: ExecutePlanInput): Promise<void> {
+    const claudePath = await this.findClaudePath();
+
+    if (!claudePath) {
+      this.emit('error', 'Claude Code CLI not found. Please install it first.');
+      this.emit('complete', false);
+      return;
+    }
+
+    // Escape the plan path for shell
+    const escapedPath = input.planPath.replace(/"/g, '\\"');
+
+    logger.info('[PlanGenerator] Starting execute-plan', { planPath: input.planPath, projectPath: this.projectPath });
+
+    this.process = spawn(claudePath, [
+      '--print', `/gsd:execute-plan "${escapedPath}"`,
+      '--allowedTools', 'Read,Write,Edit,Glob,Grep,Bash,Task',
+      '--max-turns', '50'
+    ], {
+      cwd: this.projectPath,
+      env: { ...process.env },
+      shell: true
+    });
+
+    this.setupProcessHandlers();
+  }
+
+  private setupProcessHandlers(): void {
+    if (!this.process) return;
+
+    this.process.stdout?.on('data', (data: Buffer) => {
+      const output = data.toString();
+      logger.debug('[PlanGenerator] stdout:', output);
+      this.emit('output', output);
+
+      // Parse progress from output (e.g., "[2/5]" pattern)
+      const progressMatch = output.match(/\[(\d+)\/(\d+)\]/);
+      if (progressMatch) {
+        const [, current, total] = progressMatch;
+        this.emit('progress', {
+          current: parseInt(current, 10),
+          total: parseInt(total, 10)
+        });
+      }
+    });
+
+    this.process.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString();
+      logger.debug('[PlanGenerator] stderr:', text);
+      this.emit('output', text);
+    });
+
+    this.process.on('close', (code: number | null) => {
+      logger.info('[PlanGenerator] Process closed', { code });
+      this.emit('complete', code === 0);
+    });
+
+    this.process.on('error', (err: Error) => {
+      logger.error('[PlanGenerator] Process error:', err);
+      this.emit('error', err.message);
+      this.emit('complete', false);
+    });
+  }
+
+  cancel(): void {
+    if (this.process) {
+      logger.info('[PlanGenerator] Cancelling process');
+      this.process.kill();
+      this.process = null;
+    }
+  }
+
+  private async findClaudePath(): Promise<string | null> {
+    try {
+      // Try 'where' on Windows, 'which' on Unix
+      const cmd = process.platform === 'win32' ? 'where claude' : 'which claude';
+      const result = execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0];
+      logger.debug('[PlanGenerator] Found claude at:', result);
+      return result || null;
+    } catch {
+      // Check common paths
+      const commonPaths = process.platform === 'win32'
+        ? [
+            `${process.env.APPDATA}\\npm\\claude.cmd`,
+            `${process.env.LOCALAPPDATA}\\Programs\\claude\\claude.exe`
+          ]
+        : [
+            '/usr/local/bin/claude',
+            `${process.env.HOME}/.local/bin/claude`
+          ];
+
+      for (const p of commonPaths) {
+        if (fs.existsSync(p)) {
+          logger.debug('[PlanGenerator] Found claude at common path:', p);
+          return p;
+        }
+      }
+
+      logger.warn('[PlanGenerator] Claude CLI not found');
       return null;
     }
   }
@@ -1720,5 +1879,12 @@ No phases defined yet. Use "Create Roadmap" to generate phases.
    */
   createRoadmapGenerator(): RoadmapGenerator {
     return new RoadmapGenerator(this.projectPath);
+  }
+
+  /**
+   * Create a PlanGenerator instance for this project
+   */
+  createPlanGenerator(): PlanGenerator {
+    return new PlanGenerator(this.projectPath);
   }
 }
