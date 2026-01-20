@@ -237,6 +237,19 @@ export interface GsdSharedBoard {
   updated_at: string;
 }
 
+export interface CreateProjectInput {
+  name: string;
+  description: string;
+  coreValue?: string;
+}
+
+export interface CreateProjectResult {
+  success: boolean;
+  projectPath: string;
+  filesCreated: string[];
+  error?: string;
+}
+
 export class GsdService {
   private projectPath: string;
 
@@ -1443,5 +1456,130 @@ Run \`/gsd:plan-fix ${planId}\` to create a fix plan.
 
     fs.writeFileSync(fixRequestFile, content);
     logger.info(`Fix request created: ${fixRequestFile}`);
+  }
+
+  /**
+   * Create a new GSD project with planning structure
+   */
+  async createProject(input: CreateProjectInput): Promise<CreateProjectResult> {
+    const planningDir = path.join(this.projectPath, '.planning');
+    const phasesDir = path.join(planningDir, 'phases');
+    const filesCreated: string[] = [];
+
+    try {
+      // Create directories
+      if (!fs.existsSync(planningDir)) {
+        fs.mkdirSync(planningDir, { recursive: true });
+      }
+      if (!fs.existsSync(phasesDir)) {
+        fs.mkdirSync(phasesDir, { recursive: true });
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+
+      // Create PROJECT.md
+      const projectMd = `# ${input.name}
+
+## Overview
+
+${input.description}
+
+${input.coreValue ? `## Core Value\n\n${input.coreValue}\n\n` : ''}## Key Decisions
+
+| Decision | Rationale | Date |
+|----------|-----------|------|
+| Project initialized | Starting new GSD project | ${today} |
+
+## Created
+
+- Date: ${today}
+- Tool: Auto-Claude GSD
+`;
+      fs.writeFileSync(path.join(planningDir, 'PROJECT.md'), projectMd);
+      filesCreated.push('PROJECT.md');
+
+      // Create STATE.md
+      const stateMd = `# Project State
+
+## Project Reference
+
+See: .planning/PROJECT.md
+
+**Core value:** ${input.coreValue || 'Not defined'}
+**Current focus:** Initial Setup
+
+## Current Position
+
+Phase: 0 of 0
+Plan: 0/0 completed
+Status: Awaiting roadmap creation
+Last activity: ${today} — Project initialized
+
+Progress: ░░░░░░░░░░ 0%
+
+## Next Steps
+
+1. Create roadmap: Use "Create Roadmap" button
+2. Plan first phase
+3. Execute plans
+`;
+      fs.writeFileSync(path.join(planningDir, 'STATE.md'), stateMd);
+      filesCreated.push('STATE.md');
+
+      // Create empty ROADMAP.md template
+      const roadmapMd = `# Roadmap: ${input.name}
+
+## Overview
+
+${input.description}
+
+## Phases
+
+No phases defined yet. Use "Create Roadmap" to generate phases.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| - | - | - | - |
+`;
+      fs.writeFileSync(path.join(planningDir, 'ROADMAP.md'), roadmapMd);
+      filesCreated.push('ROADMAP.md');
+
+      // Create config.json
+      const config = {
+        mode: 'standard',
+        depth: 'moderate',
+        parallelization: {
+          enabled: true,
+          plan_level: true,
+          task_level: false,
+          max_concurrent_agents: 3
+        },
+        gates: {
+          confirm_project: true,
+          confirm_phases: true,
+          confirm_plan: true
+        }
+      };
+      fs.writeFileSync(path.join(planningDir, 'config.json'), JSON.stringify(config, null, 2));
+      filesCreated.push('config.json');
+
+      logger.info(`GSD project created at ${planningDir}`, { filesCreated });
+
+      return {
+        success: true,
+        projectPath: planningDir,
+        filesCreated
+      };
+    } catch (error) {
+      logger.error('Failed to create GSD project:', error);
+      return {
+        success: false,
+        projectPath: planningDir,
+        filesCreated,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 }
