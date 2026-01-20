@@ -404,6 +404,14 @@ const browserMockAPI: ElectronAPI = {
     submitVerification: async () => ({
       success: true,
       data: undefined
+    }),
+    createProject: async () => ({
+      success: true,
+      data: {
+        success: true,
+        projectPath: '.planning',
+        filesCreated: ['PROJECT.md', 'STATE.md', 'ROADMAP.md', 'config.json']
+      }
     })
   },
 
