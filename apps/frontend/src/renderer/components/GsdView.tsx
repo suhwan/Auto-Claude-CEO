@@ -10,7 +10,7 @@ import {
   CheckCircle2, Circle, PlayCircle,
   ChevronDown, ChevronRight, FileText,
   ArrowRight, Loader2, RefreshCw, AlertCircle,
-  FolderOpen, Activity, Target, X, Eye
+  FolderOpen, Activity, Target, X, Eye, FolderPlus
 } from 'lucide-react';
 import type {
   GsdRoadmapInfo,
@@ -24,7 +24,7 @@ import type {
   GsdPlanVerification,
   GsdVerificationItem
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel } from './gsd';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard } from './gsd';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -54,6 +54,9 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // Verification state for manual UAT
   const [pendingVerifications, setPendingVerifications] = useState<GsdPlanVerification[]>([]);
+
+  // New Project wizard state
+  const [showNewProjectWizard, setShowNewProjectWizard] = useState(false);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -269,13 +272,26 @@ export function GsdView({ projectPath }: GsdViewProps) {
         <h3 className="text-lg font-medium text-muted-foreground mb-2">
           {t('navigation:gsd.noRoadmap')}
         </h3>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
+        <p className="text-sm text-muted-foreground text-center max-w-md mb-4">
           {t('navigation:gsd.noRoadmapDescription')}
         </p>
-        <Button variant="outline" className="mt-4" onClick={handleRefresh}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          {t('common:buttons.refresh')}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowNewProjectWizard(true)}>
+            <FolderPlus className="h-4 w-4 mr-2" />
+            {t('navigation:gsd.newProject')}
+          </Button>
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {t('common:buttons.refresh')}
+          </Button>
+        </div>
+
+        <NewProjectWizard
+          open={showNewProjectWizard}
+          onOpenChange={setShowNewProjectWizard}
+          projectPath={projectPath}
+          onProjectCreated={loadGsdData}
+        />
       </div>
     );
   }
