@@ -307,6 +307,14 @@ export interface CreateProjectInput {
 }
 
 /**
+ * Input for generating a roadmap
+ */
+export interface GenerateRoadmapInput {
+  goals: string;
+  depth: 'quick' | 'standard' | 'comprehensive';
+}
+
+/**
  * Result of creating a new GSD project
  */
 export interface CreateProjectResult {
@@ -340,6 +348,11 @@ export interface GsdAPI {
     checklist?: GsdVerificationItem[]
   ) => Promise<IPCResult<void>>;
   createProject: (projectPath: string, input: CreateProjectInput) => Promise<IPCResult<CreateProjectResult>>;
+  generateRoadmap: (projectPath: string, input: GenerateRoadmapInput) => Promise<IPCResult<{ generatorId: string }>>;
+  cancelGeneration: (generatorId: string) => Promise<IPCResult<void>>;
+  onRoadmapOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
+  onRoadmapError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
+  onRoadmapComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
 }
 
 /**
@@ -392,5 +405,29 @@ export const createGsdAPI = (): GsdAPI => ({
     invokeIpc(IPC_CHANNELS.GSD_SUBMIT_VERIFICATION, projectPath, planId, approved, feedback, checklist),
 
   createProject: (projectPath: string, input: CreateProjectInput): Promise<IPCResult<CreateProjectResult>> =>
-    invokeIpc(IPC_CHANNELS.GSD_CREATE_PROJECT, projectPath, input)
+    invokeIpc(IPC_CHANNELS.GSD_CREATE_PROJECT, projectPath, input),
+
+  generateRoadmap: (projectPath: string, input: GenerateRoadmapInput): Promise<IPCResult<{ generatorId: string }>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GENERATE_ROADMAP, projectPath, input),
+
+  cancelGeneration: (generatorId: string): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_CANCEL_GENERATION, generatorId),
+
+  onRoadmapOutput: (callback: (data: { generatorId: string; data: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; data: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:roadmap-output', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:roadmap-output', handler);
+  },
+
+  onRoadmapError: (callback: (data: { generatorId: string; error: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; error: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:roadmap-error', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:roadmap-error', handler);
+  },
+
+  onRoadmapComplete: (callback: (data: { generatorId: string; success: boolean }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:roadmap-complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:roadmap-complete', handler);
+  }
 });

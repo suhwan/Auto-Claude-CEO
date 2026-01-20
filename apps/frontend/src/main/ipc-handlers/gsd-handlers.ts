@@ -4,14 +4,17 @@
  * GSD workflow and kanban sync IPC handlers
  */
 
-import { ipcMain, IpcMainInvokeEvent } from 'electron';
+import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/constants';
 import type { IPCResult } from '../../shared/types/common';
-import { GsdService } from '../gsd-service';
+import { GsdService, RoadmapGenerator, GenerateRoadmapInput } from '../gsd-service';
 import { logger } from '../app-logger';
 
 // Project-based GSD Service instance cache
 const gsdServiceCache = new Map<string, GsdService>();
+
+// Store active roadmap generators
+const activeGenerators = new Map<string, RoadmapGenerator>();
 
 /**
  * Get GSD Service instance (with caching)
@@ -282,6 +285,75 @@ export function setupGsdHandlers(): void {
         return { success: result.success, data: result, error: result.error };
       } catch (error) {
         logger.error('gsd:createProject failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Generate roadmap using Claude Code CLI
+   * Returns generatorId for tracking streaming output
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GENERATE_ROADMAP,
+    async (
+      event: IpcMainInvokeEvent,
+      projectPath: string,
+      input: GenerateRoadmapInput
+    ): Promise<IPCResult<{ generatorId: string }>> => {
+      try {
+        logger.info('gsd:generateRoadmap', { projectPath, depth: input.depth });
+
+        const gsdService = getGsdService(projectPath);
+        const generator = gsdService.createRoadmapGenerator();
+        const generatorId = `gen-${Date.now()}`;
+
+        activeGenerators.set(generatorId, generator);
+
+        // Get the sender window
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        // Setup event forwarding
+        generator.on('output', (data: string) => {
+          window?.webContents.send('gsd:roadmap-output', { generatorId, data });
+        });
+
+        generator.on('error', (error: string) => {
+          window?.webContents.send('gsd:roadmap-error', { generatorId, error });
+        });
+
+        generator.on('complete', (success: boolean) => {
+          window?.webContents.send('gsd:roadmap-complete', { generatorId, success });
+          activeGenerators.delete(generatorId);
+        });
+
+        // Start generation (don't await - it runs asynchronously)
+        generator.generate(input);
+
+        return { success: true, data: { generatorId } };
+      } catch (error) {
+        logger.error('gsd:generateRoadmap failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Cancel roadmap generation
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_CANCEL_GENERATION,
+    async (_event: IpcMainInvokeEvent, generatorId: string): Promise<IPCResult<void>> => {
+      try {
+        logger.info('gsd:cancelGeneration', { generatorId });
+        const generator = activeGenerators.get(generatorId);
+        if (generator) {
+          generator.cancel();
+          activeGenerators.delete(generatorId);
+        }
+        return { success: true };
+      } catch (error) {
+        logger.error('gsd:cancelGeneration failed:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     }
