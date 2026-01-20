@@ -155,7 +155,7 @@ jobs:
           done
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-intel-builds
           path: |
@@ -254,7 +254,7 @@ jobs:
           done
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: macos-arm64-builds
           path: |
@@ -449,7 +449,7 @@ jobs:
         run: echo "::warning::Windows signing skipped - AZURE_CLIENT_ID not configured. The .exe will be unsigned."
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-builds
           path: |
@@ -531,7 +531,7 @@ jobs:
           SENTRY_PROFILES_SAMPLE_RATE: ${{ secrets.SENTRY_PROFILES_SAMPLE_RATE }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-builds
           path: |
