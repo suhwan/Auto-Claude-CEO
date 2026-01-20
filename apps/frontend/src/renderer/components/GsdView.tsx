@@ -24,7 +24,8 @@ import type {
   GsdPlanVerification,
   GsdVerificationItem
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard } from './gsd';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard, CreateRoadmapDialog } from './gsd';
+import { Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -57,6 +58,9 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // New Project wizard state
   const [showNewProjectWizard, setShowNewProjectWizard] = useState(false);
+
+  // Create Roadmap dialog state
+  const [showCreateRoadmapDialog, setShowCreateRoadmapDialog] = useState(false);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -280,7 +284,11 @@ export function GsdView({ projectPath }: GsdViewProps) {
             <FolderPlus className="h-4 w-4 mr-2" />
             {t('navigation:gsd.newProject')}
           </Button>
-          <Button variant="outline" onClick={handleRefresh}>
+          <Button onClick={() => setShowCreateRoadmapDialog(true)} variant="outline">
+            <Sparkles className="h-4 w-4 mr-2" />
+            {t('navigation:gsd.createRoadmap')}
+          </Button>
+          <Button variant="ghost" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4 mr-2" />
             {t('common:buttons.refresh')}
           </Button>
@@ -291,6 +299,13 @@ export function GsdView({ projectPath }: GsdViewProps) {
           onOpenChange={setShowNewProjectWizard}
           projectPath={projectPath}
           onProjectCreated={loadGsdData}
+        />
+
+        <CreateRoadmapDialog
+          open={showCreateRoadmapDialog}
+          onOpenChange={setShowCreateRoadmapDialog}
+          projectPath={projectPath}
+          onRoadmapCreated={loadGsdData}
         />
       </div>
     );
@@ -509,6 +524,14 @@ export function GsdView({ projectPath }: GsdViewProps) {
           loading={loadingDetail}
         />
       )}
+
+      {/* Create Roadmap Dialog */}
+      <CreateRoadmapDialog
+        open={showCreateRoadmapDialog}
+        onOpenChange={setShowCreateRoadmapDialog}
+        projectPath={projectPath}
+        onRoadmapCreated={loadGsdData}
+      />
     </div>
   );
 }
