@@ -105,7 +105,20 @@
     "coreValuePlaceholder": "Le principe directeur de ce projet",
     "coreValueHint": "Un principe directeur pour toutes les decisions de ce projet",
     "createProject": "Creer le Projet",
-    "createProjectFailed": "Echec de la creation du projet"
+    "createProjectFailed": "Echec de la creation du projet",
+    "createRoadmap": "Creer la Feuille de Route",
+    "createRoadmapDescription": "L'IA analysera vos objectifs et creera une feuille de route structuree",
+    "whatToBuild": "Que voulez-vous construire?",
+    "goalsPlaceholder": "Decrivez les objectifs, fonctionnalites, exigences de votre projet...",
+    "goalsRequired": "Veuillez decrire les objectifs de votre projet",
+    "depth": "Profondeur",
+    "depthQuick": "Rapide",
+    "depthStandard": "Standard",
+    "depthComprehensive": "Complet",
+    "generateRoadmap": "Generer la Feuille de Route",
+    "generatingRoadmap": "Generation de la feuille de route...",
+    "generateFailed": "Echec de la generation de la feuille de route",
+    "processing": "Traitement..."
   },
   "claudeCode": {
     "checking": "Vérification de Claude Code...",

@@ -105,7 +105,20 @@
     "coreValuePlaceholder": "The main principle guiding this project",
     "coreValueHint": "A guiding principle for all decisions in this project",
     "createProject": "Create Project",
-    "createProjectFailed": "Failed to create project"
+    "createProjectFailed": "Failed to create project",
+    "createRoadmap": "Create Roadmap",
+    "createRoadmapDescription": "AI will analyze your goals and create a structured roadmap",
+    "whatToBuild": "What do you want to build?",
+    "goalsPlaceholder": "Describe your project goals, features, requirements...",
+    "goalsRequired": "Please describe your project goals",
+    "depth": "Depth",
+    "depthQuick": "Quick",
+    "depthStandard": "Standard",
+    "depthComprehensive": "Comprehensive",
+    "generateRoadmap": "Generate Roadmap",
+    "generatingRoadmap": "Generating Roadmap...",
+    "generateFailed": "Failed to generate roadmap",
+    "processing": "Processing..."
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",
