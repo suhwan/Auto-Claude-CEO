@@ -92,7 +92,20 @@
     "approved": "Approved",
     "rejected": "Rejected",
     "autoQa": "Auto QA",
-    "provideFeedback": "Please provide feedback for rejection"
+    "provideFeedback": "Please provide feedback for rejection",
+    "newProject": "New Project",
+    "newProjectDescription": "Create a new GSD project with planning structure",
+    "projectName": "Project Name",
+    "projectNamePlaceholder": "My Awesome Project",
+    "projectNameRequired": "Project name is required",
+    "projectDescription": "Description",
+    "projectDescriptionPlaceholder": "A brief description of what this project does...",
+    "projectDescriptionRequired": "Description is required",
+    "coreValue": "Core Value (optional)",
+    "coreValuePlaceholder": "The main principle guiding this project",
+    "coreValueHint": "A guiding principle for all decisions in this project",
+    "createProject": "Create Project",
+    "createProjectFailed": "Failed to create project"
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",

@@ -92,7 +92,20 @@
     "approved": "Approuvé",
     "rejected": "Rejeté",
     "autoQa": "QA Auto",
-    "provideFeedback": "Veuillez fournir des commentaires pour le rejet"
+    "provideFeedback": "Veuillez fournir des commentaires pour le rejet",
+    "newProject": "Nouveau Projet",
+    "newProjectDescription": "Creer un nouveau projet GSD avec structure de planification",
+    "projectName": "Nom du Projet",
+    "projectNamePlaceholder": "Mon Super Projet",
+    "projectNameRequired": "Le nom du projet est requis",
+    "projectDescription": "Description",
+    "projectDescriptionPlaceholder": "Une breve description de ce que fait ce projet...",
+    "projectDescriptionRequired": "La description est requise",
+    "coreValue": "Valeur Fondamentale (optionnel)",
+    "coreValuePlaceholder": "Le principe directeur de ce projet",
+    "coreValueHint": "Un principe directeur pour toutes les decisions de ce projet",
+    "createProject": "Creer le Projet",
+    "createProjectFailed": "Echec de la creation du projet"
   },
   "claudeCode": {
     "checking": "Vérification de Claude Code...",
