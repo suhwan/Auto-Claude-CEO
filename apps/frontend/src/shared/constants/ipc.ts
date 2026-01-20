@@ -539,6 +539,9 @@ export const IPC_CHANNELS = {
   GSD_CREATE_PROJECT: 'gsd:createProject',
   GSD_GENERATE_ROADMAP: 'gsd:generateRoadmap',
   GSD_CANCEL_GENERATION: 'gsd:cancelGeneration',
+  GSD_PLAN_PHASE: 'gsd:planPhase',
+  GSD_EXECUTE_PLAN: 'gsd:executePlan',
+  GSD_CANCEL_PLAN: 'gsd:cancelPlan',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',

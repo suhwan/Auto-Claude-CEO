@@ -7,7 +7,7 @@
 import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/constants';
 import type { IPCResult } from '../../shared/types/common';
-import { GsdService, RoadmapGenerator, GenerateRoadmapInput } from '../gsd-service';
+import { GsdService, RoadmapGenerator, PlanGenerator, GenerateRoadmapInput, PlanPhaseInput, ExecutePlanInput } from '../gsd-service';
 import { logger } from '../app-logger';
 
 // Project-based GSD Service instance cache
@@ -15,6 +15,9 @@ const gsdServiceCache = new Map<string, GsdService>();
 
 // Store active roadmap generators
 const activeGenerators = new Map<string, RoadmapGenerator>();
+
+// Store active plan generators
+const activePlanGenerators = new Map<string, PlanGenerator>();
 
 /**
  * Get GSD Service instance (with caching)
@@ -354,6 +357,123 @@ export function setupGsdHandlers(): void {
         return { success: true };
       } catch (error) {
         logger.error('gsd:cancelGeneration failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Plan a phase using Claude Code CLI
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_PLAN_PHASE,
+    async (
+      event: IpcMainInvokeEvent,
+      projectPath: string,
+      input: PlanPhaseInput
+    ): Promise<IPCResult<{ generatorId: string }>> => {
+      try {
+        logger.info('gsd:planPhase', { projectPath, phase: input.phaseNumber });
+
+        const gsdService = getGsdService(projectPath);
+        const generator = gsdService.createPlanGenerator();
+        const generatorId = `plan-${Date.now()}`;
+
+        activePlanGenerators.set(generatorId, generator);
+
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        generator.on('output', (data: string) => {
+          window?.webContents.send('gsd:plan-output', { generatorId, data });
+        });
+
+        generator.on('progress', (progress: { current: number; total: number }) => {
+          window?.webContents.send('gsd:plan-progress', { generatorId, ...progress });
+        });
+
+        generator.on('error', (error: string) => {
+          window?.webContents.send('gsd:plan-error', { generatorId, error });
+        });
+
+        generator.on('complete', (success: boolean) => {
+          window?.webContents.send('gsd:plan-complete', { generatorId, success });
+          activePlanGenerators.delete(generatorId);
+        });
+
+        generator.planPhase(input);
+
+        return { success: true, data: { generatorId } };
+      } catch (error) {
+        logger.error('gsd:planPhase failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Execute a plan using Claude Code CLI
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_EXECUTE_PLAN,
+    async (
+      event: IpcMainInvokeEvent,
+      projectPath: string,
+      input: ExecutePlanInput
+    ): Promise<IPCResult<{ generatorId: string }>> => {
+      try {
+        logger.info('gsd:executePlan', { projectPath, planPath: input.planPath });
+
+        const gsdService = getGsdService(projectPath);
+        const generator = gsdService.createPlanGenerator();
+        const generatorId = `exec-${Date.now()}`;
+
+        activePlanGenerators.set(generatorId, generator);
+
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        generator.on('output', (data: string) => {
+          window?.webContents.send('gsd:execute-output', { generatorId, data });
+        });
+
+        generator.on('progress', (progress: { current: number; total: number }) => {
+          window?.webContents.send('gsd:execute-progress', { generatorId, ...progress });
+        });
+
+        generator.on('error', (error: string) => {
+          window?.webContents.send('gsd:execute-error', { generatorId, error });
+        });
+
+        generator.on('complete', (success: boolean) => {
+          window?.webContents.send('gsd:execute-complete', { generatorId, success });
+          activePlanGenerators.delete(generatorId);
+        });
+
+        generator.executePlan(input);
+
+        return { success: true, data: { generatorId } };
+      } catch (error) {
+        logger.error('gsd:executePlan failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Cancel plan generation or execution
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_CANCEL_PLAN,
+    async (_event: IpcMainInvokeEvent, generatorId: string): Promise<IPCResult<void>> => {
+      try {
+        logger.info('gsd:cancelPlan', { generatorId });
+        const generator = activePlanGenerators.get(generatorId);
+        if (generator) {
+          generator.cancel();
+          activePlanGenerators.delete(generatorId);
+        }
+        return { success: true };
+      } catch (error) {
+        logger.error('gsd:cancelPlan failed:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     }
