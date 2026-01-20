@@ -25,6 +25,7 @@ None (커스텀 통합 프로젝트)
 - [x] **Phase 9: UI GSD Tab** - Auto-Claude UI에 GSD 탭 추가 ✓
 - [x] **Phase 10: UI Dashboard** - 팀별 칸반 레인, 리더 대시보드, 수동 검증 UI ✓
 - [x] **Phase 11: GSD Creation UI** - 프로젝트/로드맵/Plan 생성 UI, Claude Code 연동 ✓
+- [ ] **Phase 12: GSD-Kanban Integration** - Ideas→GSD→Kanban 통합, 병렬 실행 지원
 
 ## Phase Details
 
@@ -157,10 +158,23 @@ Plans:
 - [x] 11-02: Create Roadmap UI (AI 생성) ✓
 - [x] 11-03: Plan/Execute UI (Claude Code 연동) ✓
 
+### Phase 12: GSD-Kanban Integration
+**Goal**: Ideas→GSD→Kanban 워크플로우 통합, Phase별 Task 그룹화, 병렬 실행 지원
+**Depends on**: Phase 11
+**Research**: Likely (Kanban-GSD 연동)
+**Research topics**: Ideas 데이터 구조, Kanban Task 메타데이터, 병렬 실행 상태 관리
+**Plans**: 4
+
+Plans:
+- [ ] 12-01: Ideas → GSD 변환 (Convert to GSD Project)
+- [ ] 12-02: GSD → Kanban 연동 (Phase별 Task 그룹화)
+- [ ] 12-03: Kanban Task 실행 UI (Plan/Research/Execute 버튼)
+- [ ] 12-04: 병렬 실행 및 의존성 관리
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → ... → 10 → 11
+Phases execute in numeric order: 1 → 2 → ... → 11 → 12
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -175,8 +189,9 @@ Phases execute in numeric order: 1 → 2 → ... → 10 → 11
 | 9. UI GSD Tab | 3/3 | Complete ✓ | 2026-01-18 |
 | 10. UI Dashboard | 3/3 | Complete ✓ | 2026-01-19 |
 | 11. GSD Creation UI | 3/3 | Complete ✓ | 2026-01-20 |
+| 12. GSD-Kanban Integration | 0/4 | Not started | - |
 
-## Milestone 2 Complete!
+## Milestone 2 Progress
 
-**Total**: 11/11 Phases, 33/33 Plans
-**Status**: All phases complete
+**Total**: 11/12 Phases, 33/37 Plans
+**Status**: Phase 12 ready
