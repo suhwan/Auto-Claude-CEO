@@ -8,7 +8,7 @@
  */
 
 import { ipcMain } from 'electron';
-import { execFileSync, spawn, execFile } from 'child_process';
+import { execFileSync, spawn, execFile, exec } from 'child_process';
 import { existsSync, promises as fsPromises } from 'fs';
 import path from 'path';
 import os from 'os';
@@ -495,8 +495,6 @@ export async function openTerminalWithCommand(command: string): Promise<void> {
 
     // For Windows, use exec with a properly formed command string
     // This is more reliable than spawn for complex PowerShell commands with pipes
-    const { exec } = require('child_process');
-
     const runWindowsCommand = (cmdString: string): Promise<void> => {
       return new Promise((resolve) => {
         console.log(`[Claude Code] Executing: ${cmdString}`);
