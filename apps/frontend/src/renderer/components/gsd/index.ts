@@ -5,3 +5,4 @@ export { TeamKanbanView } from './TeamKanbanView';
 export { LeaderDashboard } from './LeaderDashboard';
 export { VerificationPanel, VerificationBadge } from './VerificationPanel';
 export { NewProjectWizard } from './NewProjectWizard';
+export { CreateRoadmapDialog } from './CreateRoadmapDialog';
