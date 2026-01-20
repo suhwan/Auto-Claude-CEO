@@ -24,8 +24,8 @@ import type {
   GsdPlanVerification,
   GsdVerificationItem
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard, CreateRoadmapDialog } from './gsd';
-import { Sparkles } from 'lucide-react';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard, CreateRoadmapDialog, PlanPhaseDialog, ExecutePlanDialog } from './gsd';
+import { Sparkles, Play } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -61,6 +61,14 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // Create Roadmap dialog state
   const [showCreateRoadmapDialog, setShowCreateRoadmapDialog] = useState(false);
+
+  // Plan Phase dialog state
+  const [showPlanPhaseDialog, setShowPlanPhaseDialog] = useState(false);
+  const [selectedPhaseForPlan, setSelectedPhaseForPlan] = useState<{ number: number; goal: string } | null>(null);
+
+  // Execute Plan dialog state
+  const [showExecutePlanDialog, setShowExecutePlanDialog] = useState(false);
+  const [selectedPlanForExecution, setSelectedPlanForExecution] = useState<{ path: string; name: string } | null>(null);
 
   // Load GSD data
   const loadGsdData = useCallback(async () => {
@@ -358,6 +366,18 @@ export function GsdView({ projectPath }: GsdViewProps) {
     }
   };
 
+  // Handler for plan phase button
+  const handlePlanPhase = (phaseNumber: number, phaseGoal: string) => {
+    setSelectedPhaseForPlan({ number: phaseNumber, goal: phaseGoal });
+    setShowPlanPhaseDialog(true);
+  };
+
+  // Handler for execute plan button
+  const handleExecutePlan = (planPath: string, planName: string) => {
+    setSelectedPlanForExecution({ path: planPath, name: planName });
+    setShowExecutePlanDialog(true);
+  };
+
   return (
     <div className="h-full flex flex-col">
       {/* Header with tabs and progress visualization */}
@@ -508,6 +528,8 @@ export function GsdView({ projectPath }: GsdViewProps) {
               onSyncPlan={syncPlanToKanban}
               onSyncPhase={syncPhaseToKanban}
               onPlanClick={loadPlanDetail}
+              onPlanPhase={handlePlanPhase}
+              onExecutePlan={handleExecutePlan}
               syncingPlan={syncingPlan}
               getStatusIcon={getStatusIcon}
               getStatusBadge={getStatusBadge}
@@ -532,6 +554,30 @@ export function GsdView({ projectPath }: GsdViewProps) {
         projectPath={projectPath}
         onRoadmapCreated={loadGsdData}
       />
+
+      {/* Plan Phase Dialog */}
+      {selectedPhaseForPlan && (
+        <PlanPhaseDialog
+          open={showPlanPhaseDialog}
+          onOpenChange={setShowPlanPhaseDialog}
+          projectPath={projectPath}
+          phaseNumber={selectedPhaseForPlan.number}
+          phaseGoal={selectedPhaseForPlan.goal}
+          onPlanCreated={loadGsdData}
+        />
+      )}
+
+      {/* Execute Plan Dialog */}
+      {selectedPlanForExecution && (
+        <ExecutePlanDialog
+          open={showExecutePlanDialog}
+          onOpenChange={setShowExecutePlanDialog}
+          projectPath={projectPath}
+          planPath={selectedPlanForExecution.path}
+          planName={selectedPlanForExecution.name}
+          onExecutionComplete={loadGsdData}
+        />
+      )}
     </div>
   );
 }
@@ -625,6 +671,8 @@ interface PhaseCardProps {
   onSyncPlan: (plan: GsdPlanInfo) => void;
   onSyncPhase: (phaseNumber: number) => void;
   onPlanClick: (planPath: string) => void;
+  onPlanPhase: (phaseNumber: number, phaseGoal: string) => void;
+  onExecutePlan: (planPath: string, planName: string) => void;
   syncingPlan: string | null;
   getStatusIcon: (status: string) => React.ReactNode;
   getStatusBadge: (status: string) => React.ReactNode;
@@ -638,6 +686,8 @@ function PhaseCard({
   onSyncPlan,
   onSyncPhase,
   onPlanClick,
+  onPlanPhase,
+  onExecutePlan,
   syncingPlan,
   getStatusIcon,
   getStatusBadge
@@ -712,12 +762,29 @@ function PhaseCard({
                 plan={plan}
                 onSync={() => onSyncPlan(plan)}
                 onClick={() => onPlanClick(plan.path)}
+                onExecute={() => onExecutePlan(plan.path, plan.name)}
                 isSyncing={syncingPlan === plan.path}
               />
             ))}
           </div>
 
-          {phase.plans.length === 0 && (
+          {phase.plans.length === 0 && phase.status !== 'complete' && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-muted-foreground italic">
+                {t('navigation:gsd.noPlans')}
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onPlanPhase(phase.number, phase.goal)}
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                {t('navigation:gsd.planPhaseButton')}
+              </Button>
+            </div>
+          )}
+
+          {phase.plans.length === 0 && phase.status === 'complete' && (
             <p className="text-sm text-muted-foreground italic">
               {t('navigation:gsd.noPlans')}
             </p>
@@ -733,10 +800,11 @@ interface PlanRowProps {
   plan: GsdPlanInfo;
   onSync: () => void;
   onClick: () => void;
+  onExecute: () => void;
   isSyncing: boolean;
 }
 
-function PlanRow({ plan, onSync, onClick, isSyncing }: PlanRowProps) {
+function PlanRow({ plan, onSync, onClick, onExecute, isSyncing }: PlanRowProps) {
   const { t } = useTranslation(['navigation', 'common']);
 
   const getStatusColor = (status: string) => {
@@ -759,26 +827,46 @@ function PlanRow({ plan, onSync, onClick, isSyncing }: PlanRowProps) {
           ({plan.completed}/{plan.tasks})
         </span>
       )}
+      {plan.status === 'complete' && (
+        <Badge variant="secondary" className="text-green-500 text-xs">
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          {t('navigation:gsd.done')}
+        </Badge>
+      )}
       {plan.status !== 'complete' && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSync();
-          }}
-          disabled={isSyncing}
-          className="h-6 px-2"
-        >
-          {isSyncing ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <>
-              <ArrowRight className="h-3 w-3 mr-1" />
-              {t('navigation:gsd.kanban')}
-            </>
-          )}
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onExecute();
+            }}
+            className="h-6 px-2"
+          >
+            <Play className="h-3 w-3 mr-1" />
+            {t('navigation:gsd.execute')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSync();
+            }}
+            disabled={isSyncing}
+            className="h-6 px-2"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <>
+                <ArrowRight className="h-3 w-3 mr-1" />
+                {t('navigation:gsd.kanban')}
+              </>
+            )}
+          </Button>
+        </>
       )}
     </div>
   );
