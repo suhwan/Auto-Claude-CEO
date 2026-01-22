@@ -374,6 +374,14 @@ export interface PlanPhaseInput {
 }
 
 /**
+ * Input for researching a phase
+ */
+export interface ResearchPhaseInput {
+  phaseNumber: number;
+  additionalContext?: string;
+}
+
+/**
  * Input for executing a plan
  */
 export interface ExecutePlanInput {
@@ -387,6 +395,50 @@ export interface GsdChatInput {
   title: string;
   description: string;
   rationale: string;
+}
+
+/**
+ * Execution wave (group of parallelizable tasks)
+ */
+export interface ExecutionWave {
+  waveNumber: number;
+  tasks: string[];
+  isParallel: boolean;
+}
+
+/**
+ * Execution phase plan
+ */
+export interface ExecutionPhase {
+  phaseNumber: number;
+  phaseName: string;
+  waves: ExecutionWave[];
+  totalTasks: number;
+  parallelizable: number;
+}
+
+/**
+ * Task execution progress
+ */
+export interface TaskProgress {
+  taskId: string;
+  planId: string;
+  sessionId: string;
+  status: 'pending' | 'ready' | 'running' | 'complete' | 'error';
+  progress?: number;
+  output?: string;
+  error?: string;
+}
+
+/**
+ * Phase execution result
+ */
+export interface PhaseExecutionResult {
+  phaseNumber: number;
+  totalTasks: number;
+  successful: number;
+  failed: number;
+  duration: number;
 }
 
 /**
@@ -419,8 +471,9 @@ export interface GsdAPI {
   onRoadmapError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
   onRoadmapComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
 
-  // Plan/Execute operations
+  // Plan/Research/Execute operations
   planPhase: (projectPath: string, input: PlanPhaseInput) => Promise<IPCResult<{ generatorId: string }>>;
+  researchPhase: (projectPath: string, input: ResearchPhaseInput) => Promise<IPCResult<{ generatorId: string }>>;
   executePlan: (projectPath: string, input: ExecutePlanInput) => Promise<IPCResult<{ generatorId: string }>>;
   cancelPlan: (generatorId: string) => Promise<IPCResult<void>>;
 
@@ -429,6 +482,12 @@ export interface GsdAPI {
   onPlanProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void) => () => void;
   onPlanError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
   onPlanComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
+
+  // Research event listeners
+  onResearchOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
+  onResearchProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void) => () => void;
+  onResearchError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
+  onResearchComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
 
   // Execute event listeners
   onExecuteOutput: (callback: (data: { generatorId: string; data: string }) => void) => () => void;
@@ -449,6 +508,15 @@ export interface GsdAPI {
   // Kanban integration operations
   getKanbanTasks: (projectPath: string, roadmapPath?: string) => Promise<IPCResult<GsdTaskConversionResult>>;
   syncToKanban: (projectPath: string) => Promise<IPCResult<GsdSyncToKanbanResult>>;
+
+  // Parallel execution operations
+  getExecutionPlan: (projectPath: string, phaseNumber: number) => Promise<IPCResult<ExecutionPhase | null>>;
+  executePhaseParallel: (projectPath: string, phaseNumber: number) => Promise<IPCResult<PhaseExecutionResult>>;
+  cancelParallelExecution: () => Promise<IPCResult<void>>;
+
+  // Parallel execution event listeners
+  onParallelProgress: (callback: (updates: TaskProgress[]) => void) => () => void;
+  onParallelComplete: (callback: (result: PhaseExecutionResult) => void) => () => void;
 }
 
 /**
@@ -527,9 +595,12 @@ export const createGsdAPI = (): GsdAPI => ({
     return () => window.electronAPI?.ipcRenderer?.off('gsd:roadmap-complete', handler);
   },
 
-  // Plan/Execute operations
+  // Plan/Research/Execute operations
   planPhase: (projectPath: string, input: PlanPhaseInput): Promise<IPCResult<{ generatorId: string }>> =>
     invokeIpc(IPC_CHANNELS.GSD_PLAN_PHASE, projectPath, input),
+
+  researchPhase: (projectPath: string, input: ResearchPhaseInput): Promise<IPCResult<{ generatorId: string }>> =>
+    invokeIpc(IPC_CHANNELS.GSD_RESEARCH_PHASE, projectPath, input),
 
   executePlan: (projectPath: string, input: ExecutePlanInput): Promise<IPCResult<{ generatorId: string }>> =>
     invokeIpc(IPC_CHANNELS.GSD_EXECUTE_PLAN, projectPath, input),
@@ -560,6 +631,31 @@ export const createGsdAPI = (): GsdAPI => ({
     const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
     window.electronAPI?.ipcRenderer?.on('gsd:plan-complete', handler);
     return () => window.electronAPI?.ipcRenderer?.off('gsd:plan-complete', handler);
+  },
+
+  // Research event listeners
+  onResearchOutput: (callback: (data: { generatorId: string; data: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; data: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:research-output', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:research-output', handler);
+  },
+
+  onResearchProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; current: number; total: number }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:research-progress', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:research-progress', handler);
+  },
+
+  onResearchError: (callback: (data: { generatorId: string; error: string }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; error: string }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:research-error', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:research-error', handler);
+  },
+
+  onResearchComplete: (callback: (data: { generatorId: string; success: boolean }) => void): (() => void) => {
+    const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
+    window.electronAPI?.ipcRenderer?.on('gsd:research-complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:research-complete', handler);
   },
 
   // Execute event listeners
@@ -621,5 +717,28 @@ export const createGsdAPI = (): GsdAPI => ({
     invokeIpc(IPC_CHANNELS.GSD_GET_KANBAN_TASKS, projectPath, roadmapPath),
 
   syncToKanban: (projectPath: string): Promise<IPCResult<GsdSyncToKanbanResult>> =>
-    invokeIpc(IPC_CHANNELS.GSD_SYNC_TO_KANBAN, projectPath)
+    invokeIpc(IPC_CHANNELS.GSD_SYNC_TO_KANBAN, projectPath),
+
+  // Parallel execution operations
+  getExecutionPlan: (projectPath: string, phaseNumber: number): Promise<IPCResult<ExecutionPhase | null>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_EXECUTION_PLAN, projectPath, phaseNumber),
+
+  executePhaseParallel: (projectPath: string, phaseNumber: number): Promise<IPCResult<PhaseExecutionResult>> =>
+    invokeIpc(IPC_CHANNELS.GSD_EXECUTE_PHASE_PARALLEL, projectPath, phaseNumber),
+
+  cancelParallelExecution: (): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_CANCEL_PARALLEL_EXECUTION),
+
+  // Parallel execution event listeners
+  onParallelProgress: (callback: (updates: TaskProgress[]) => void): (() => void) => {
+    const handler = (_: unknown, updates: TaskProgress[]) => callback(updates);
+    window.electronAPI?.ipcRenderer?.on('gsd:parallel:progress', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:parallel:progress', handler);
+  },
+
+  onParallelComplete: (callback: (result: PhaseExecutionResult) => void): (() => void) => {
+    const handler = (_: unknown, result: PhaseExecutionResult) => callback(result);
+    window.electronAPI?.ipcRenderer?.on('gsd:parallel:complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:parallel:complete', handler);
+  }
 });
