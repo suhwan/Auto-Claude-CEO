@@ -138,6 +138,16 @@
     "executing": "Executing...",
     "execute": "Execute",
     "done": "Done",
+    "plans": "plans",
+    "parallelSafe": "Parallel",
+    "parallelSafeTooltip": "This plan can be executed in parallel with other tasks",
+    "phaseKanban": "Phase Kanban",
+    "kanban": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "complete": "Complete",
+      "empty": "No tasks"
+    },
     "chatDialog": {
       "title": "Create GSD Project: {{title}}",
       "description": "Have a conversation with Claude to define your project requirements",
