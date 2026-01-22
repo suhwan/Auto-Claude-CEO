@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ExternalLink, Play, X } from 'lucide-react';
+import { ExternalLink, FolderGit2, Play, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
@@ -40,16 +40,18 @@ interface IdeaCardProps {
   isSelected: boolean;
   onClick: () => void;
   onConvert: (idea: Idea) => void;
+  onConvertToGsd?: (idea: Idea) => void;
   onGoToTask?: (taskId: string) => void;
   onDismiss: (idea: Idea) => void;
   onToggleSelect: (ideaId: string) => void;
 }
 
-export function IdeaCard({ idea, isSelected, onClick, onConvert, onGoToTask, onDismiss, onToggleSelect }: IdeaCardProps) {
+export function IdeaCard({ idea, isSelected, onClick, onConvert, onConvertToGsd, onGoToTask, onDismiss, onToggleSelect }: IdeaCardProps) {
   const { t } = useTranslation('common');
   const isDismissed = idea.status === 'dismissed';
   const isArchived = idea.status === 'archived';
   const isConverted = idea.status === 'converted';
+  const isGsdConverted = idea.status === 'gsd_converted';
   const isInactive = isDismissed || isArchived;
 
   return (
@@ -125,7 +127,7 @@ export function IdeaCard({ idea, isSelected, onClick, onConvert, onGoToTask, onD
           <p className="text-sm text-muted-foreground line-clamp-2">{idea.description}</p>
           </div>
           {/* Action buttons */}
-          {!isInactive && !isConverted && (
+          {!isInactive && !isConverted && !isGsdConverted && (
             <div className="flex items-center gap-1 ml-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -144,6 +146,25 @@ export function IdeaCard({ idea, isSelected, onClick, onConvert, onGoToTask, onD
                 </TooltipTrigger>
                 <TooltipContent>{t('accessibility.convertToTaskAriaLabel')}</TooltipContent>
               </Tooltip>
+              {onConvertToGsd && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onConvertToGsd(idea);
+                      }}
+                      aria-label={t('accessibility.convertToGsdAriaLabel')}
+                    >
+                      <FolderGit2 className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('accessibility.convertToGsdAriaLabel')}</TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

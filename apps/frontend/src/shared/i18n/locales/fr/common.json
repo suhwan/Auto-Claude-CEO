@@ -52,7 +52,9 @@
     "hideTokenEntryAriaLabel": "Masquer la saisie du jeton",
     "enterTokenManuallyAriaLabel": "Saisir le jeton manuellement",
     "renameProfileAriaLabel": "Renommer le profil",
-    "deleteProfileAriaLabel": "Supprimer le profil"
+    "deleteProfileAriaLabel": "Supprimer le profil",
+    "convertToGsdAriaLabel": "Convertir en projet GSD",
+    "goToGsdProjectAriaLabel": "Aller au projet GSD"
   },
   "buttons": {
     "save": "Enregistrer",
@@ -91,7 +93,10 @@
     "noData": "Aucune donnée",
     "optional": "Optionnel",
     "required": "Requis",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "complete": "Terminé",
+    "inProgress": "En cours",
+    "notStarted": "Non commencé"
   },
   "time": {
     "justNow": "À l'instant",

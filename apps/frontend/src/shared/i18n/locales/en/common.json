@@ -52,7 +52,9 @@
     "hideTokenEntryAriaLabel": "Hide token entry",
     "enterTokenManuallyAriaLabel": "Enter token manually",
     "renameProfileAriaLabel": "Rename profile",
-    "deleteProfileAriaLabel": "Delete profile"
+    "deleteProfileAriaLabel": "Delete profile",
+    "convertToGsdAriaLabel": "Convert to GSD Project",
+    "goToGsdProjectAriaLabel": "Go to GSD Project"
   },
   "buttons": {
     "save": "Save",
@@ -91,7 +93,10 @@
     "noData": "No data",
     "optional": "Optional",
     "required": "Required",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "complete": "Complete",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started"
   },
   "time": {
     "justNow": "Just now",
