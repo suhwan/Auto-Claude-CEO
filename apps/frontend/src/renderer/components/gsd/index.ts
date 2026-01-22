@@ -9,3 +9,5 @@ export { CreateRoadmapDialog } from './CreateRoadmapDialog';
 export { PlanPhaseDialog } from './PlanPhaseDialog';
 export { ExecutePlanDialog } from './ExecutePlanDialog';
 export { GsdKanbanView } from './GsdKanbanView';
+export { GsdTaskDetailPanel, type GsdTaskWithMeta } from './GsdTaskDetailPanel';
+export { TerminalOutput } from './TerminalOutput';

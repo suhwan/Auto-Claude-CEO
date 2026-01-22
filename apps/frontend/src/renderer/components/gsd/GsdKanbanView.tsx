@@ -4,6 +4,8 @@
  * Displays GSD ROADMAP phases as swimlanes with tasks grouped by status.
  * Each phase row shows its plans as cards that can be tracked through
  * Pending -> In Progress -> Complete statuses.
+ *
+ * Now includes GsdTaskDetailPanel for Plan/Research/Execute actions.
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -23,6 +25,8 @@ import type {
   GsdPhaseGroup,
   GsdTaskConversionResult
 } from '../../../preload/api/modules/gsd-api';
+import { GsdTaskDetailPanel, type GsdTaskWithMeta } from './GsdTaskDetailPanel';
+import { cn } from '../../lib/utils';
 
 // Task status columns for Kanban
 type KanbanColumn = 'pending' | 'in_progress' | 'complete';
@@ -40,6 +44,7 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
   const [error, setError] = useState<string | null>(null);
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<GsdTaskWithMeta | null>(null);
 
   // Load GSD Kanban data
   const loadData = useCallback(async () => {
@@ -53,10 +58,11 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
       const result = await window.electronAPI.gsd.getKanbanTasks(projectPath);
 
       if (result.success && result.data) {
-        setData(result.data);
+        const resultData = result.data;
+        setData(resultData);
         // Auto-expand phases with in-progress tasks
-        const phasesWithInProgress = result.data.phases
-          .filter(p => result.data.tasks.some(t =>
+        const phasesWithInProgress = resultData.phases
+          .filter(p => resultData.tasks.some(t =>
             p.tasks.includes(t.id) && t.status === 'in_progress'
           ))
           .map(p => p.id);
@@ -135,6 +141,43 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percent };
   }, [data]);
+
+  // Handle task card click - open detail panel
+  const handleTaskCardClick = useCallback((task: GsdConvertedTask) => {
+    // Convert to GsdTaskWithMeta (with plan/summary path metadata)
+    const taskWithMeta: GsdTaskWithMeta = {
+      ...task,
+      // Check if plan exists based on task status
+      planPath: task.status !== 'pending' ?
+        `.planning/phases/${String(task.phaseNumber).padStart(2, '0')}-*/${task.id.replace('gsd-', '')}-PLAN.md` :
+        undefined,
+      summaryPath: task.status === 'complete' ?
+        `.planning/phases/${String(task.phaseNumber).padStart(2, '0')}-*/${task.id.replace('gsd-', '')}-SUMMARY.md` :
+        undefined
+    };
+    setSelectedTask(taskWithMeta);
+    // Also call external handler if provided
+    onTaskClick?.(task);
+  }, [onTaskClick]);
+
+  // Handle task update from detail panel
+  const handleTaskUpdate = useCallback((updatedTask: GsdTaskWithMeta) => {
+    setSelectedTask(updatedTask);
+    // Update task in data
+    if (data) {
+      setData({
+        ...data,
+        tasks: data.tasks.map(t =>
+          t.id === updatedTask.id ? { ...t, status: updatedTask.status } : t
+        )
+      });
+    }
+  }, [data]);
+
+  // Handle detail panel close
+  const handleDetailPanelClose = useCallback(() => {
+    setSelectedTask(null);
+  }, []);
 
   // Loading state
   if (loading) {
@@ -272,7 +315,7 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
                               <TaskCard
                                 key={task.id}
                                 task={task}
-                                onClick={() => onTaskClick?.(task)}
+                                onClick={() => handleTaskCardClick(task)}
                                 onExecute={onExecutePlan ? () => onExecutePlan(task.id) : undefined}
                               />
                             ))}
@@ -293,6 +336,16 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
+
+      {/* Task Detail Panel (slide-out) */}
+      {selectedTask && (
+        <GsdTaskDetailPanel
+          task={selectedTask}
+          projectPath={projectPath}
+          onClose={handleDetailPanelClose}
+          onTaskUpdate={handleTaskUpdate}
+        />
+      )}
     </TooltipProvider>
   );
 }
