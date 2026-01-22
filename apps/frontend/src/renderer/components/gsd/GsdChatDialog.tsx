@@ -19,7 +19,7 @@ import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Loader2, Send, Bot, User, CheckCircle2, X } from 'lucide-react';
-import { cn } from '../../../shared/utils/cn';
+import { cn } from '../../lib/utils';
 import type { Idea } from '../../../shared/types';
 
 interface ChatMessage {
