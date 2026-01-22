@@ -540,6 +540,7 @@ export const IPC_CHANNELS = {
   GSD_GENERATE_ROADMAP: 'gsd:generateRoadmap',
   GSD_CANCEL_GENERATION: 'gsd:cancelGeneration',
   GSD_PLAN_PHASE: 'gsd:planPhase',
+  GSD_RESEARCH_PHASE: 'gsd:researchPhase',
   GSD_EXECUTE_PLAN: 'gsd:executePlan',
   GSD_CANCEL_PLAN: 'gsd:cancelPlan',
   GSD_START_CHAT_SESSION: 'gsd:startChatSession',
@@ -547,6 +548,9 @@ export const IPC_CHANNELS = {
   GSD_END_CHAT_SESSION: 'gsd:endChatSession',
   GSD_GET_KANBAN_TASKS: 'gsd:getKanbanTasks',
   GSD_SYNC_TO_KANBAN: 'gsd:syncToKanban',
+  GSD_GET_EXECUTION_PLAN: 'gsd:getExecutionPlan',
+  GSD_EXECUTE_PHASE_PARALLEL: 'gsd:executePhaseParallel',
+  GSD_CANCEL_PARALLEL_EXECUTION: 'gsd:cancelParallelExecution',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',

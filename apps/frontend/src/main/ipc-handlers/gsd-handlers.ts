@@ -7,7 +7,9 @@
 import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/constants';
 import type { IPCResult } from '../../shared/types/common';
-import { GsdService, RoadmapGenerator, PlanGenerator, ChatGenerator, GenerateRoadmapInput, PlanPhaseInput, ExecutePlanInput, GsdChatInput } from '../gsd-service';
+import { GsdService, RoadmapGenerator, PlanGenerator, ChatGenerator, GenerateRoadmapInput, PlanPhaseInput, ResearchPhaseInput, ExecutePlanInput, GsdChatInput } from '../gsd-service';
+import { GsdDependencyAnalyzer } from '../gsd-dependency-analyzer';
+import { GsdParallelExecutor, TaskProgress, PhaseExecutionResult } from '../gsd-parallel-executor';
 import { logger } from '../app-logger';
 
 // Project-based GSD Service instance cache
@@ -21,6 +23,9 @@ const activePlanGenerators = new Map<string, PlanGenerator>();
 
 // Store active chat generators
 const activeChatGenerators = new Map<string, ChatGenerator>();
+
+// Store active parallel executor (one per project)
+let activeParallelExecutor: GsdParallelExecutor | null = null;
 
 /**
  * Get GSD Service instance (with caching)
@@ -414,6 +419,54 @@ export function setupGsdHandlers(): void {
   );
 
   /**
+   * Research a phase using Claude Code CLI
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_RESEARCH_PHASE,
+    async (
+      event: IpcMainInvokeEvent,
+      projectPath: string,
+      input: ResearchPhaseInput
+    ): Promise<IPCResult<{ generatorId: string }>> => {
+      try {
+        logger.info('gsd:researchPhase', { projectPath, phase: input.phaseNumber });
+
+        const gsdService = getGsdService(projectPath);
+        const generator = gsdService.createPlanGenerator();
+        const generatorId = `research-${Date.now()}`;
+
+        activePlanGenerators.set(generatorId, generator);
+
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        generator.on('output', (data: string) => {
+          window?.webContents.send('gsd:research-output', { generatorId, data });
+        });
+
+        generator.on('progress', (progress: { current: number; total: number }) => {
+          window?.webContents.send('gsd:research-progress', { generatorId, ...progress });
+        });
+
+        generator.on('error', (error: string) => {
+          window?.webContents.send('gsd:research-error', { generatorId, error });
+        });
+
+        generator.on('complete', (success: boolean) => {
+          window?.webContents.send('gsd:research-complete', { generatorId, success });
+          activePlanGenerators.delete(generatorId);
+        });
+
+        generator.researchPhase(input);
+
+        return { success: true, data: { generatorId } };
+      } catch (error) {
+        logger.error('gsd:researchPhase failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
    * Execute a plan using Claude Code CLI
    */
   ipcMain.handle(
@@ -635,6 +688,84 @@ export function setupGsdHandlers(): void {
         };
       } catch (error) {
         logger.error('gsd:syncToKanban failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Get execution plan for a phase
+   * Analyzes dependencies and returns wave-based execution plan
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_EXECUTION_PLAN,
+    async (_event: IpcMainInvokeEvent, projectPath: string, phaseNumber: number): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getExecutionPlan', { projectPath, phaseNumber });
+        const analyzer = new GsdDependencyAnalyzer(projectPath);
+        const phasePlan = await analyzer.getPhaseExecutionPlan(phaseNumber);
+        return { success: true, data: phasePlan };
+      } catch (error) {
+        logger.error('gsd:getExecutionPlan failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Execute all plans in a phase with parallel execution
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_EXECUTE_PHASE_PARALLEL,
+    async (event: IpcMainInvokeEvent, projectPath: string, phaseNumber: number): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:executePhaseParallel', { projectPath, phaseNumber });
+
+        // Cancel any existing executor
+        if (activeParallelExecutor) {
+          activeParallelExecutor.cancelAll();
+        }
+
+        // Create new executor
+        activeParallelExecutor = new GsdParallelExecutor(projectPath);
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        // Execute with progress callbacks
+        const result = await activeParallelExecutor.executePhaseParallel(
+          phaseNumber,
+          (updates: TaskProgress[]) => {
+            window?.webContents.send('gsd:parallel:progress', updates);
+          }
+        );
+
+        // Send completion event
+        window?.webContents.send('gsd:parallel:complete', result);
+
+        activeParallelExecutor = null;
+        return { success: true, data: result };
+      } catch (error) {
+        logger.error('gsd:executePhaseParallel failed:', error);
+        activeParallelExecutor = null;
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Cancel ongoing parallel execution
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_CANCEL_PARALLEL_EXECUTION,
+    async (): Promise<IPCResult<void>> => {
+      try {
+        logger.info('gsd:cancelParallelExecution');
+        if (activeParallelExecutor) {
+          activeParallelExecutor.cancelAll();
+          activeParallelExecutor = null;
+        }
+        return { success: true };
+      } catch (error) {
+        logger.error('gsd:cancelParallelExecution failed:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     }
