@@ -17,7 +17,7 @@ export type IdeationType =
   | 'security_hardening'
   | 'performance_optimizations'
   | 'code_quality';
-export type IdeationStatus = 'draft' | 'selected' | 'converted' | 'dismissed' | 'archived';
+export type IdeationStatus = 'draft' | 'selected' | 'converted' | 'dismissed' | 'archived' | 'gsd_converted';
 export type IdeationGenerationPhase = 'idle' | 'analyzing' | 'discovering' | 'generating' | 'finalizing' | 'complete' | 'error';
 
 export interface IdeationConfig {
@@ -38,6 +38,7 @@ export interface IdeaBase {
   status: IdeationStatus;
   createdAt: Date;
   taskId?: string; // ID of the created task when status is 'converted'
+  gsdProjectPath?: string; // GSD project path (.planning/) when status is 'gsd_converted'
 }
 
 export interface CodeImprovementIdea extends IdeaBase {
