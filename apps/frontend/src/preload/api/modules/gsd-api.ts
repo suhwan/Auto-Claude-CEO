@@ -340,6 +340,15 @@ export interface ExecutePlanInput {
 }
 
 /**
+ * Input for starting a GSD chat session
+ */
+export interface GsdChatInput {
+  title: string;
+  description: string;
+  rationale: string;
+}
+
+/**
  * GSD API interface
  */
 export interface GsdAPI {
@@ -385,6 +394,16 @@ export interface GsdAPI {
   onExecuteProgress: (callback: (data: { generatorId: string; current: number; total: number }) => void) => () => void;
   onExecuteError: (callback: (data: { generatorId: string; error: string }) => void) => () => void;
   onExecuteComplete: (callback: (data: { generatorId: string; success: boolean }) => void) => () => void;
+
+  // Chat session operations
+  startChatSession: (projectPath: string, idea: GsdChatInput) => Promise<IPCResult<{ sessionId: string }>>;
+  sendChatMessage: (sessionId: string, message: string) => Promise<IPCResult<void>>;
+  endChatSession: (sessionId: string) => Promise<IPCResult<void>>;
+
+  // Chat event listeners
+  onChatMessage: (callback: (message: string) => void) => () => void;
+  onChatError: (callback: (error: string) => void) => () => void;
+  onChatComplete: (callback: (result: { gsdPath: string }) => void) => () => void;
 }
 
 /**
@@ -521,5 +540,34 @@ export const createGsdAPI = (): GsdAPI => ({
     const handler = (_: unknown, data: { generatorId: string; success: boolean }) => callback(data);
     window.electronAPI?.ipcRenderer?.on('gsd:execute-complete', handler);
     return () => window.electronAPI?.ipcRenderer?.off('gsd:execute-complete', handler);
+  },
+
+  // Chat session operations
+  startChatSession: (projectPath: string, idea: GsdChatInput): Promise<IPCResult<{ sessionId: string }>> =>
+    invokeIpc(IPC_CHANNELS.GSD_START_CHAT_SESSION, projectPath, idea),
+
+  sendChatMessage: (sessionId: string, message: string): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_SEND_CHAT_MESSAGE, sessionId, message),
+
+  endChatSession: (sessionId: string): Promise<IPCResult<void>> =>
+    invokeIpc(IPC_CHANNELS.GSD_END_CHAT_SESSION, sessionId),
+
+  // Chat event listeners
+  onChatMessage: (callback: (message: string) => void): (() => void) => {
+    const handler = (_: unknown, message: string) => callback(message);
+    window.electronAPI?.ipcRenderer?.on('gsd:chat:message', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:chat:message', handler);
+  },
+
+  onChatError: (callback: (error: string) => void): (() => void) => {
+    const handler = (_: unknown, error: string) => callback(error);
+    window.electronAPI?.ipcRenderer?.on('gsd:chat:error', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:chat:error', handler);
+  },
+
+  onChatComplete: (callback: (result: { gsdPath: string }) => void): (() => void) => {
+    const handler = (_: unknown, result: { gsdPath: string }) => callback(result);
+    window.electronAPI?.ipcRenderer?.on('gsd:chat:complete', handler);
+    return () => window.electronAPI?.ipcRenderer?.off('gsd:chat:complete', handler);
   }
 });
