@@ -24,8 +24,8 @@ import type {
   GsdPlanVerification,
   GsdVerificationItem
 } from '../../preload/api/modules/gsd-api';
-import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard, CreateRoadmapDialog, PlanPhaseDialog, ExecutePlanDialog } from './gsd';
-import { Sparkles, Play } from 'lucide-react';
+import { TimelineView, ProgressRing, TeamKanbanView, LeaderDashboard, VerificationPanel, NewProjectWizard, CreateRoadmapDialog, PlanPhaseDialog, ExecutePlanDialog, GsdKanbanView } from './gsd';
+import { Sparkles, Play, Columns3 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 
 interface GsdViewProps {
@@ -48,7 +48,7 @@ export function GsdView({ projectPath }: GsdViewProps) {
 
   // Kanban view state
   const [board, setBoard] = useState<GsdSharedBoard | null>(null);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'kanban' | 'dashboard'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'kanban' | 'phase_kanban' | 'dashboard'>('timeline');
 
   // Leader Context state
   const [leaderContext, setLeaderContext] = useState<GsdLeaderContext | null>(null);
@@ -385,10 +385,14 @@ export function GsdView({ projectPath }: GsdViewProps) {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('navigation:gsd.title')}</h2>
           <div className="flex items-center gap-2">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'timeline' | 'kanban' | 'dashboard')}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'timeline' | 'kanban' | 'phase_kanban' | 'dashboard')}>
               <TabsList className="h-8">
                 <TabsTrigger value="timeline" className="text-xs px-3">
                   {t('navigation:gsd.timeline')}
+                </TabsTrigger>
+                <TabsTrigger value="phase_kanban" className="text-xs px-3">
+                  <Columns3 className="h-3 w-3 mr-1" />
+                  {t('navigation:gsd.phaseKanban')}
                 </TabsTrigger>
                 <TabsTrigger value="kanban" className="text-xs px-3">
                   {t('navigation:gsd.teamKanban')}
@@ -469,7 +473,27 @@ export function GsdView({ projectPath }: GsdViewProps) {
           </>
         )}
 
-        {/* Kanban View Tab */}
+        {/* Phase Kanban View Tab - GSD-style swimlanes */}
+        {activeTab === 'phase_kanban' && (
+          <GsdKanbanView
+            projectPath={projectPath}
+            onTaskClick={(task) => {
+              // Load plan detail when task is clicked
+              if (task.id.startsWith('gsd-')) {
+                const planPath = `.planning/phases/${task.id.replace('gsd-', '').replace('-', '-')}/PLAN.md`;
+                loadPlanDetail(planPath);
+              }
+            }}
+            onExecutePlan={(taskId) => {
+              if (taskId.startsWith('gsd-')) {
+                const planPath = `.planning/phases/${taskId.replace('gsd-', '').replace('-', '-')}/PLAN.md`;
+                handleExecutePlan(planPath, taskId);
+              }
+            }}
+          />
+        )}
+
+        {/* Team Kanban View Tab */}
         {activeTab === 'kanban' && board && (
           <TeamKanbanView board={board} onTaskClick={handleTaskClick} />
         )}
