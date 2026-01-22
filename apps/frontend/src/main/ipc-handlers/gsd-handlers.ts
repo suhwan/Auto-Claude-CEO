@@ -7,7 +7,7 @@
 import { ipcMain, IpcMainInvokeEvent, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/constants';
 import type { IPCResult } from '../../shared/types/common';
-import { GsdService, RoadmapGenerator, PlanGenerator, GenerateRoadmapInput, PlanPhaseInput, ExecutePlanInput } from '../gsd-service';
+import { GsdService, RoadmapGenerator, PlanGenerator, ChatGenerator, GenerateRoadmapInput, PlanPhaseInput, ExecutePlanInput, GsdChatInput } from '../gsd-service';
 import { logger } from '../app-logger';
 
 // Project-based GSD Service instance cache
@@ -18,6 +18,9 @@ const activeGenerators = new Map<string, RoadmapGenerator>();
 
 // Store active plan generators
 const activePlanGenerators = new Map<string, PlanGenerator>();
+
+// Store active chat generators
+const activeChatGenerators = new Map<string, ChatGenerator>();
 
 /**
  * Get GSD Service instance (with caching)
@@ -474,6 +477,103 @@ export function setupGsdHandlers(): void {
         return { success: true };
       } catch (error) {
         logger.error('gsd:cancelPlan failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Start a GSD chat session for project creation
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_START_CHAT_SESSION,
+    async (
+      event: IpcMainInvokeEvent,
+      projectPath: string,
+      idea: GsdChatInput
+    ): Promise<IPCResult<{ sessionId: string }>> => {
+      try {
+        logger.info('gsd:startChatSession', { projectPath, title: idea.title });
+
+        const gsdService = getGsdService(projectPath);
+        const generator = gsdService.createChatGenerator();
+        const sessionId = generator.getSessionId();
+
+        activeChatGenerators.set(sessionId, generator);
+
+        const window = BrowserWindow.fromWebContents(event.sender);
+
+        // Setup event forwarding
+        generator.on('message', (data: string) => {
+          window?.webContents.send('gsd:chat:message', data);
+        });
+
+        generator.on('error', (error: string) => {
+          window?.webContents.send('gsd:chat:error', error);
+          activeChatGenerators.delete(sessionId);
+        });
+
+        generator.on('complete', (result: { gsdPath: string }) => {
+          window?.webContents.send('gsd:chat:complete', result);
+          activeChatGenerators.delete(sessionId);
+        });
+
+        // Start the chat session
+        generator.start(idea);
+
+        return { success: true, data: { sessionId } };
+      } catch (error) {
+        logger.error('gsd:startChatSession failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Send a message to an active chat session
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_SEND_CHAT_MESSAGE,
+    async (
+      _event: IpcMainInvokeEvent,
+      sessionId: string,
+      message: string
+    ): Promise<IPCResult<void>> => {
+      try {
+        logger.info('gsd:sendChatMessage', { sessionId, messageLength: message.length });
+
+        const generator = activeChatGenerators.get(sessionId);
+        if (!generator) {
+          return { success: false, error: 'Chat session not found' };
+        }
+
+        generator.sendMessage(message);
+        return { success: true };
+      } catch (error) {
+        logger.error('gsd:sendChatMessage failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * End a chat session
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_END_CHAT_SESSION,
+    async (_event: IpcMainInvokeEvent, sessionId: string): Promise<IPCResult<void>> => {
+      try {
+        logger.info('gsd:endChatSession', { sessionId });
+
+        const generator = activeChatGenerators.get(sessionId);
+        if (generator) {
+          generator.end();
+          activeChatGenerators.delete(sessionId);
+        }
+
+        return { success: true };
+      } catch (error) {
+        logger.error('gsd:endChatSession failed:', error);
         return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
       }
     }

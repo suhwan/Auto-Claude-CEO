@@ -541,6 +541,163 @@ export class PlanGenerator extends EventEmitter {
   }
 }
 
+/**
+ * Input for starting a GSD chat session
+ */
+export interface GsdChatInput {
+  title: string;
+  description: string;
+  rationale: string;
+}
+
+/**
+ * ChatGenerator - Interactive chat session with Claude for GSD project creation
+ *
+ * Spawns Claude CLI process with /gsd:new-project and handles bidirectional
+ * communication for conversational project requirements gathering.
+ */
+export class ChatGenerator extends EventEmitter {
+  private process: ChildProcess | null = null;
+  private projectPath: string;
+  private sessionId: string;
+
+  constructor(projectPath: string) {
+    super();
+    this.projectPath = projectPath;
+    this.sessionId = `chat-${Date.now()}`;
+  }
+
+  getSessionId(): string {
+    return this.sessionId;
+  }
+
+  async start(input: GsdChatInput): Promise<void> {
+    const claudePath = await this.findClaudePath();
+
+    if (!claudePath) {
+      this.emit('error', 'Claude Code CLI not found. Please install it first.');
+      return;
+    }
+
+    // Build the initial prompt with idea context
+    const prompt = `/gsd:new-project
+
+Context from the selected idea:
+- Title: ${input.title}
+- Description: ${input.description}
+- Rationale: ${input.rationale}
+
+Please guide me through creating this GSD project by asking questions about goals, requirements, and constraints.`;
+
+    logger.info('[ChatGenerator] Starting chat session', { sessionId: this.sessionId, projectPath: this.projectPath });
+
+    // Use interactive mode with stdin/stdout for bidirectional communication
+    this.process = spawn(claudePath, [
+      '--allowedTools', 'Read,Write,Glob,Grep,Task',
+      '--max-turns', '50'
+    ], {
+      cwd: this.projectPath,
+      env: { ...process.env },
+      shell: true,
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    // Setup output handlers
+    this.process.stdout?.on('data', (data: Buffer) => {
+      const output = data.toString();
+      logger.debug('[ChatGenerator] stdout:', output);
+      this.emit('message', output);
+
+      // Check if .planning/ directory was created (indicates completion)
+      if (output.includes('.planning/PROJECT.md') || output.includes('PROJECT.md has been created')) {
+        const gsdPath = path.join(this.projectPath, '.planning');
+        this.emit('complete', { gsdPath });
+      }
+    });
+
+    this.process.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString();
+      logger.debug('[ChatGenerator] stderr:', text);
+      // Emit stderr as regular output (claude often writes progress to stderr)
+      this.emit('message', text);
+    });
+
+    this.process.on('close', (code: number | null) => {
+      logger.info('[ChatGenerator] Process closed', { code, sessionId: this.sessionId });
+      if (code === 0) {
+        const gsdPath = path.join(this.projectPath, '.planning');
+        if (fs.existsSync(gsdPath)) {
+          this.emit('complete', { gsdPath });
+        }
+      } else {
+        this.emit('error', `Process exited with code ${code}`);
+      }
+    });
+
+    this.process.on('error', (err: Error) => {
+      logger.error('[ChatGenerator] Process error:', err);
+      this.emit('error', err.message);
+    });
+
+    // Send initial prompt
+    this.process.stdin?.write(prompt + '\n');
+  }
+
+  sendMessage(message: string): void {
+    if (!this.process || !this.process.stdin) {
+      logger.warn('[ChatGenerator] Cannot send message: no active process');
+      return;
+    }
+
+    logger.debug('[ChatGenerator] Sending message:', message);
+    this.process.stdin.write(message + '\n');
+  }
+
+  end(): void {
+    if (this.process) {
+      logger.info('[ChatGenerator] Ending session', { sessionId: this.sessionId });
+      // Send EOF to gracefully end
+      this.process.stdin?.end();
+      // Kill if still running after a delay
+      setTimeout(() => {
+        if (this.process) {
+          this.process.kill();
+          this.process = null;
+        }
+      }, 1000);
+    }
+  }
+
+  private async findClaudePath(): Promise<string | null> {
+    try {
+      const cmd = process.platform === 'win32' ? 'where claude' : 'which claude';
+      const result = execSync(cmd, { encoding: 'utf-8' }).trim().split('\n')[0];
+      logger.debug('[ChatGenerator] Found claude at:', result);
+      return result || null;
+    } catch {
+      const commonPaths = process.platform === 'win32'
+        ? [
+            `${process.env.APPDATA}\\npm\\claude.cmd`,
+            `${process.env.LOCALAPPDATA}\\Programs\\claude\\claude.exe`
+          ]
+        : [
+            '/usr/local/bin/claude',
+            `${process.env.HOME}/.local/bin/claude`
+          ];
+
+      for (const p of commonPaths) {
+        if (fs.existsSync(p)) {
+          logger.debug('[ChatGenerator] Found claude at common path:', p);
+          return p;
+        }
+      }
+
+      logger.warn('[ChatGenerator] Claude CLI not found');
+      return null;
+    }
+  }
+}
+
 export class GsdService {
   private projectPath: string;
 
@@ -1886,5 +2043,12 @@ No phases defined yet. Use "Create Roadmap" to generate phases.
    */
   createPlanGenerator(): PlanGenerator {
     return new PlanGenerator(this.projectPath);
+  }
+
+  /**
+   * Create a ChatGenerator instance for this project
+   */
+  createChatGenerator(): ChatGenerator {
+    return new ChatGenerator(this.projectPath);
   }
 }

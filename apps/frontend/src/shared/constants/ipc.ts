@@ -542,6 +542,9 @@ export const IPC_CHANNELS = {
   GSD_PLAN_PHASE: 'gsd:planPhase',
   GSD_EXECUTE_PLAN: 'gsd:executePlan',
   GSD_CANCEL_PLAN: 'gsd:cancelPlan',
+  GSD_START_CHAT_SESSION: 'gsd:startChatSession',
+  GSD_SEND_CHAT_MESSAGE: 'gsd:sendChatMessage',
+  GSD_END_CHAT_SESSION: 'gsd:endChatSession',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',
