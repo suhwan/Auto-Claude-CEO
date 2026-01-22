@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import { TabsContent } from '../ui/tabs';
 import { EnvConfigModal } from '../EnvConfigModal';
 import { IDEATION_TYPE_DESCRIPTIONS } from '../../../shared/constants';
@@ -11,15 +12,39 @@ import { IdeaDetailPanel } from './IdeaDetailPanel';
 import { useIdeation } from './hooks/useIdeation';
 import { useViewState } from '../../contexts/ViewStateContext';
 import { ALL_IDEATION_TYPES } from './constants';
+import { GsdChatDialog } from '../gsd/GsdChatDialog';
+import { useIdeationStore } from '../../stores/ideation-store';
+import type { Idea } from '../../../shared/types';
 
 interface IdeationProps {
   projectId: string;
+  projectPath: string;
   onGoToTask?: (taskId: string) => void;
 }
 
-export function Ideation({ projectId, onGoToTask }: IdeationProps) {
+export function Ideation({ projectId, projectPath, onGoToTask }: IdeationProps) {
   // Get showArchived from shared context for cross-page sync
   const { showArchived } = useViewState();
+
+  // GSD Chat dialog state
+  const [showGsdChatDialog, setShowGsdChatDialog] = useState(false);
+  const [gsdConversionIdea, setGsdConversionIdea] = useState<Idea | null>(null);
+  const setIdeaGsdPath = useIdeationStore((state) => state.setIdeaGsdPath);
+
+  // Handler for opening GSD chat dialog
+  const handleConvertToGsd = useCallback((idea: Idea) => {
+    setGsdConversionIdea(idea);
+    setShowGsdChatDialog(true);
+  }, []);
+
+  // Handler for GSD conversion complete
+  const handleGsdConversionComplete = useCallback((gsdProjectPath: string) => {
+    if (gsdConversionIdea) {
+      setIdeaGsdPath(gsdConversionIdea.id, gsdProjectPath);
+    }
+    setShowGsdChatDialog(false);
+    setGsdConversionIdea(null);
+  }, [gsdConversionIdea, setIdeaGsdPath]);
 
   // Pass showArchived directly to the hook to avoid render lag from useEffect sync
   const {
@@ -162,6 +187,7 @@ export function Ideation({ projectId, onGoToTask }: IdeationProps) {
                   isSelected={selectedIds.has(idea.id)}
                   onClick={() => setSelectedIdea(selectedIdea?.id === idea.id ? null : idea)}
                   onConvert={handleConvertToTask}
+                  onConvertToGsd={handleConvertToGsd}
                   onGoToTask={handleGoToTask}
                   onDismiss={handleDismiss}
                   onToggleSelect={toggleSelectIdea}
@@ -197,6 +223,7 @@ export function Ideation({ projectId, onGoToTask }: IdeationProps) {
                       isSelected={selectedIds.has(idea.id)}
                       onClick={() => setSelectedIdea(selectedIdea?.id === idea.id ? null : idea)}
                       onConvert={handleConvertToTask}
+                      onConvertToGsd={handleConvertToGsd}
                       onGoToTask={handleGoToTask}
                       onDismiss={handleDismiss}
                       onToggleSelect={toggleSelectIdea}
@@ -243,6 +270,20 @@ export function Ideation({ projectId, onGoToTask }: IdeationProps) {
         title="Claude Authentication Required"
         description="A Claude Code OAuth token is required to generate AI-powered feature ideas."
         projectId={projectId}
+      />
+
+      {/* GSD Chat Dialog for converting ideas to GSD projects */}
+      <GsdChatDialog
+        open={showGsdChatDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setGsdConversionIdea(null);
+          }
+          setShowGsdChatDialog(open);
+        }}
+        idea={gsdConversionIdea}
+        projectPath={projectPath}
+        onComplete={handleGsdConversionComplete}
       />
     </div>
   );
