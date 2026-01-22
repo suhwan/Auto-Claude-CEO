@@ -137,7 +137,19 @@
     "failed": "Failed",
     "executing": "Executing...",
     "execute": "Execute",
-    "done": "Done"
+    "done": "Done",
+    "chatDialog": {
+      "title": "Create GSD Project: {{title}}",
+      "description": "Have a conversation with Claude to define your project requirements",
+      "inputPlaceholder": "Type your answer...",
+      "send": "Send",
+      "starting": "Starting conversation...",
+      "thinking": "Claude is thinking...",
+      "conversationComplete": "Project created successfully!",
+      "error": "An error occurred during the conversation",
+      "cancel": "Cancel",
+      "close": "Close"
+    }
   },
   "claudeCode": {
     "checking": "Checking Claude Code...",
