@@ -11,3 +11,4 @@ export { ExecutePlanDialog } from './ExecutePlanDialog';
 export { GsdKanbanView } from './GsdKanbanView';
 export { GsdTaskDetailPanel, type GsdTaskWithMeta } from './GsdTaskDetailPanel';
 export { TerminalOutput } from './TerminalOutput';
+export { ParallelExecutionDashboard } from './ParallelExecutionDashboard';

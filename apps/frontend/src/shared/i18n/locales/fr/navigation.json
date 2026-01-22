@@ -148,6 +148,13 @@
       "complete": "Termine",
       "empty": "Aucune tache"
     },
+    "executeAll": "Tout Executer",
+    "executeAllTooltip": "Executer tous les plans de cette phase en parallele",
+    "parallelExecution": "Execution Parallele",
+    "canParallel": "peuvent s'executer en parallele",
+    "parallel": "parallele",
+    "executionComplete": "Execution terminee avec succes",
+    "executionFailed": "Execution terminee avec des erreurs",
     "chatDialog": {
       "title": "Creer un projet GSD: {{title}}",
       "description": "Discutez avec Claude pour definir les exigences de votre projet",

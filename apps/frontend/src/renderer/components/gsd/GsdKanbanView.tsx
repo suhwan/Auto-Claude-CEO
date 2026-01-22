@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../ui/
 import {
   CheckCircle2, Circle, PlayCircle, Loader2, RefreshCw,
   ChevronRight, ChevronDown, Play, Link as LinkIcon,
-  AlertCircle
+  AlertCircle, Zap
 } from 'lucide-react';
 import type {
   GsdConvertedTask,
@@ -26,6 +26,7 @@ import type {
   GsdTaskConversionResult
 } from '../../../preload/api/modules/gsd-api';
 import { GsdTaskDetailPanel, type GsdTaskWithMeta } from './GsdTaskDetailPanel';
+import { ParallelExecutionDashboard } from './ParallelExecutionDashboard';
 import { cn } from '../../lib/utils';
 
 // Task status columns for Kanban
@@ -45,6 +46,7 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTask, setSelectedTask] = useState<GsdTaskWithMeta | null>(null);
+  const [parallelExecutionPhase, setParallelExecutionPhase] = useState<{ number: number; name: string } | null>(null);
 
   // Load GSD Kanban data
   const loadData = useCallback(async () => {
@@ -300,6 +302,32 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
                           {progress.percent}%
                         </Badge>
                       </div>
+
+                      {/* Execute All Button */}
+                      {progress.percent < 100 && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setParallelExecutionPhase({
+                                  number: phase.phaseNumber,
+                                  name: phase.name
+                                });
+                              }}
+                            >
+                              <Zap className="h-4 w-4 mr-1" />
+                              {t('navigation:gsd.executeAll')}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {t('navigation:gsd.executeAllTooltip', 'Execute all plans in this phase in parallel')}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                     </div>
 
                     {/* Expanded Tasks */}
@@ -344,6 +372,20 @@ export function GsdKanbanView({ projectPath, onTaskClick, onExecutePlan }: GsdKa
           projectPath={projectPath}
           onClose={handleDetailPanelClose}
           onTaskUpdate={handleTaskUpdate}
+        />
+      )}
+
+      {/* Parallel Execution Dashboard */}
+      {parallelExecutionPhase && (
+        <ParallelExecutionDashboard
+          projectPath={projectPath}
+          phaseNumber={parallelExecutionPhase.number}
+          phaseName={parallelExecutionPhase.name}
+          onClose={() => {
+            setParallelExecutionPhase(null);
+            // Refresh data after parallel execution
+            handleRefresh();
+          }}
         />
       )}
     </TooltipProvider>
