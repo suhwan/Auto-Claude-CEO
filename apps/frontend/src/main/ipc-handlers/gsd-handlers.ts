@@ -579,5 +579,66 @@ export function setupGsdHandlers(): void {
     }
   );
 
+  /**
+   * Get GSD tasks for Kanban display
+   * Converts ROADMAP.md phases/plans into Kanban-compatible task structures
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_GET_KANBAN_TASKS,
+    async (_event: IpcMainInvokeEvent, projectPath: string, roadmapPath?: string): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:getKanbanTasks', { projectPath, roadmapPath });
+        const gsdService = getGsdService(projectPath);
+        const result = await gsdService.convertRoadmapToTasks(roadmapPath);
+        return { success: true, data: result };
+      } catch (error) {
+        logger.error('gsd:getKanbanTasks failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
+  /**
+   * Sync GSD plans to Kanban board
+   * Creates/updates tasks in .auto-claude/specs from ROADMAP phases
+   */
+  ipcMain.handle(
+    IPC_CHANNELS.GSD_SYNC_TO_KANBAN,
+    async (_event: IpcMainInvokeEvent, projectPath: string): Promise<IPCResult> => {
+      try {
+        logger.info('gsd:syncToKanban', { projectPath });
+        const gsdService = getGsdService(projectPath);
+
+        // Get roadmap info to iterate through phases
+        const roadmap = await gsdService.getRoadmap();
+        let totalSynced = 0;
+        const syncResults: Array<{ phaseNumber: number; taskCount: number }> = [];
+
+        // Sync each phase to kanban
+        for (const phase of roadmap.phases) {
+          const result = await gsdService.syncPhaseToKanban(phase.number);
+          if (result.success && result.task_count) {
+            totalSynced += result.task_count;
+            syncResults.push({
+              phaseNumber: phase.number,
+              taskCount: result.task_count
+            });
+          }
+        }
+
+        return {
+          success: true,
+          data: {
+            totalSynced,
+            phases: syncResults
+          }
+        };
+      } catch (error) {
+        logger.error('gsd:syncToKanban failed:', error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    }
+  );
+
   logger.info('[GSD] IPC handlers registered');
 }

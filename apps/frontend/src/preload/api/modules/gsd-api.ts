@@ -86,6 +86,47 @@ export interface GsdProgressInfo {
 }
 
 /**
+ * GSD Converted Task for Kanban display
+ */
+export interface GsdConvertedTask {
+  id: string;           // "gsd-{phase}-{plan}" (e.g., "gsd-01-02")
+  title: string;        // Plan name
+  description: string;  // Plan objective
+  phaseNumber: number;
+  planNumber: number;
+  status: 'pending' | 'in_progress' | 'complete';
+  parallelSafe: boolean;
+  dependsOn: string[];
+}
+
+/**
+ * GSD Phase Group for Kanban swimlane display
+ */
+export interface GsdPhaseGroup {
+  id: string;           // "gsd-phase-{n}"
+  name: string;         // "Phase {n}: {title}"
+  phaseNumber: number;
+  tasks: string[];      // Task IDs
+  completed: boolean;
+}
+
+/**
+ * GSD Task Conversion Result
+ */
+export interface GsdTaskConversionResult {
+  tasks: GsdConvertedTask[];
+  phases: GsdPhaseGroup[];
+}
+
+/**
+ * GSD Sync to Kanban Result
+ */
+export interface GsdSyncToKanbanResult {
+  totalSynced: number;
+  phases: Array<{ phaseNumber: number; taskCount: number }>;
+}
+
+/**
  * GSD Sync status
  */
 export interface GsdSyncStatus {
@@ -404,6 +445,10 @@ export interface GsdAPI {
   onChatMessage: (callback: (message: string) => void) => () => void;
   onChatError: (callback: (error: string) => void) => () => void;
   onChatComplete: (callback: (result: { gsdPath: string }) => void) => () => void;
+
+  // Kanban integration operations
+  getKanbanTasks: (projectPath: string, roadmapPath?: string) => Promise<IPCResult<GsdTaskConversionResult>>;
+  syncToKanban: (projectPath: string) => Promise<IPCResult<GsdSyncToKanbanResult>>;
 }
 
 /**
@@ -569,5 +614,12 @@ export const createGsdAPI = (): GsdAPI => ({
     const handler = (_: unknown, result: { gsdPath: string }) => callback(result);
     window.electronAPI?.ipcRenderer?.on('gsd:chat:complete', handler);
     return () => window.electronAPI?.ipcRenderer?.off('gsd:chat:complete', handler);
-  }
+  },
+
+  // Kanban integration operations
+  getKanbanTasks: (projectPath: string, roadmapPath?: string): Promise<IPCResult<GsdTaskConversionResult>> =>
+    invokeIpc(IPC_CHANNELS.GSD_GET_KANBAN_TASKS, projectPath, roadmapPath),
+
+  syncToKanban: (projectPath: string): Promise<IPCResult<GsdSyncToKanbanResult>> =>
+    invokeIpc(IPC_CHANNELS.GSD_SYNC_TO_KANBAN, projectPath)
 });

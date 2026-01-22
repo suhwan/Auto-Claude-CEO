@@ -545,6 +545,8 @@ export const IPC_CHANNELS = {
   GSD_START_CHAT_SESSION: 'gsd:startChatSession',
   GSD_SEND_CHAT_MESSAGE: 'gsd:sendChatMessage',
   GSD_END_CHAT_SESSION: 'gsd:endChatSession',
+  GSD_GET_KANBAN_TASKS: 'gsd:getKanbanTasks',
+  GSD_SYNC_TO_KANBAN: 'gsd:syncToKanban',
 
   // CEO (Chief Executive Officer) agent operations
   CEO_LOAD_AGENTS: 'ceo:loadAgents',
