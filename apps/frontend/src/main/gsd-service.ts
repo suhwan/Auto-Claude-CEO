@@ -121,6 +121,31 @@ export interface GsdProgressInfo {
   current_phase: number;
 }
 
+// GSD to Kanban conversion types
+export interface GsdConvertedTask {
+  id: string;           // "gsd-{phase}-{plan}" (e.g., "gsd-01-02")
+  title: string;        // Plan name
+  description: string;  // Plan objective
+  phaseNumber: number;
+  planNumber: number;
+  status: 'pending' | 'in_progress' | 'complete';
+  parallelSafe: boolean;
+  dependsOn: string[];
+}
+
+export interface GsdPhaseGroup {
+  id: string;           // "gsd-phase-{n}"
+  name: string;         // "Phase {n}: {title}"
+  phaseNumber: number;
+  tasks: string[];      // Task IDs
+  completed: boolean;
+}
+
+export interface GsdTaskConversionResult {
+  tasks: GsdConvertedTask[];
+  phases: GsdPhaseGroup[];
+}
+
 // LeaderContext types for CEO Dashboard
 export interface GsdGoal {
   id: string;
@@ -2029,6 +2054,79 @@ No phases defined yet. Use "Create Roadmap" to generate phases.
         error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
+  }
+
+  /**
+   * Convert ROADMAP.md phases and plans to Kanban-compatible tasks
+   * Returns structured task data with phase groupings for swimlane display
+   */
+  async convertRoadmapToTasks(roadmapPath: string = '.planning/ROADMAP.md'): Promise<GsdTaskConversionResult> {
+    const roadmap = await this.getRoadmap(roadmapPath);
+
+    const tasks: GsdConvertedTask[] = [];
+    const phaseGroups: GsdPhaseGroup[] = [];
+
+    for (const phase of roadmap.phases) {
+      const phaseTasks: GsdConvertedTask[] = [];
+
+      for (const plan of phase.plans) {
+        // Parse plan ID to get plan number
+        const planIdParts = plan.id.split('-');
+        const planNumber = parseInt(planIdParts[1] || '0', 10);
+
+        // Get plan details for parallel_safe and depends_on
+        let parallelSafe = true;
+        let dependsOn: string[] = [];
+        let objective = '';
+
+        if (plan.path && fs.existsSync(path.join(this.projectPath, plan.path))) {
+          const planDetail = await this.getPlanDetail(plan.path);
+          if (planDetail) {
+            parallelSafe = planDetail.parallel_safe;
+            dependsOn = planDetail.depends_on ? [planDetail.depends_on] : [];
+            objective = planDetail.objective;
+          }
+        }
+
+        // Convert plan status to task status
+        let taskStatus: 'pending' | 'in_progress' | 'complete';
+        switch (plan.status) {
+          case 'complete':
+            taskStatus = 'complete';
+            break;
+          case 'in_progress':
+            taskStatus = 'in_progress';
+            break;
+          default:
+            taskStatus = 'pending';
+        }
+
+        const task: GsdConvertedTask = {
+          id: `gsd-${plan.id}`,
+          title: plan.name,
+          description: objective || `Plan ${plan.id}: ${plan.name}`,
+          phaseNumber: phase.number,
+          planNumber,
+          status: taskStatus,
+          parallelSafe,
+          dependsOn
+        };
+
+        tasks.push(task);
+        phaseTasks.push(task);
+      }
+
+      // Create phase group
+      phaseGroups.push({
+        id: `gsd-phase-${phase.number}`,
+        name: `Phase ${phase.number}: ${phase.name}`,
+        phaseNumber: phase.number,
+        tasks: phaseTasks.map(t => t.id),
+        completed: phase.status === 'complete'
+      });
+    }
+
+    return { tasks, phases: phaseGroups };
   }
 
   /**
