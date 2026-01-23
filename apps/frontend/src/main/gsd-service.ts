@@ -63,6 +63,100 @@ export interface GsdSyncResult {
   task_count?: number;
 }
 
+// ============================================================
+// Auto-Claude Integration Types
+// ============================================================
+
+/** Parsed task from PLAN.md <task> element */
+interface ParsedGsdTask {
+  type: string;        // "auto" | "checkpoint:human-verify" | "checkpoint:decision"
+  name: string;
+  files: string[];
+  action: string;
+  verify: string;
+  done: string;
+}
+
+/** Full parsed PLAN.md structure */
+interface ParsedGsdPlan {
+  phase: string;
+  planNumber: number;
+  planType: string;    // "execute" | "tdd"
+  dependsOn: string[];
+  filesModified: string[];
+  objectiveTitle: string;
+  objectivePurpose: string;
+  objectiveOutput: string;
+  contextRefs: string[];
+  tasks: ParsedGsdTask[];
+  verificationItems: string[];
+  successCriteria: string[];
+  planPath: string;
+}
+
+/** Auto-Claude verification structure */
+interface AutoClaudeVerification {
+  type: 'command' | 'api' | 'browser' | 'component' | 'manual' | 'none';
+  run?: string;
+  url?: string;
+  method?: string;
+  expect_status?: number;
+  expect_contains?: string;
+  scenario?: string;
+}
+
+/** Auto-Claude subtask structure */
+interface AutoClaudeSubtask {
+  id: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'blocked' | 'failed';
+  service?: string;
+  all_services?: boolean;
+  files_to_modify?: string[];
+  files_to_create?: string[];
+  patterns_from?: string[];
+  verification?: AutoClaudeVerification;
+  expected_output?: string;
+  actual_output?: string;
+  started_at?: string;
+  completed_at?: string;
+  session_id?: number;
+}
+
+/** Auto-Claude phase structure */
+interface AutoClaudePhase {
+  phase: number;
+  name: string;
+  type: 'setup' | 'implementation' | 'investigation' | 'integration' | 'cleanup';
+  subtasks: AutoClaudeSubtask[];
+  chunks?: AutoClaudeSubtask[];  // Backwards compatibility
+  depends_on?: number[];
+  parallel_safe?: boolean;
+}
+
+/** Full Auto-Claude implementation_plan.json structure */
+interface AutoClaudeImplementationPlan {
+  feature: string;
+  workflow_type: 'feature' | 'refactor' | 'investigation' | 'migration' | 'simple' | 'development' | 'enhancement';
+  services_involved: string[];
+  phases: AutoClaudePhase[];
+  final_acceptance: string[];
+  created_at: string;
+  updated_at: string;
+  spec_file: string;
+  status?: string;
+  planStatus?: string;
+  recoveryNote?: string;
+  qa_signoff?: Record<string, unknown>;
+  // GSD source metadata
+  gsd_source?: {
+    phase: string;
+    plan: number;
+    path: string;
+    depends_on: string[];
+  };
+}
+
 export interface GsdStateInfo {
   current_focus: string;
   current_position: {
@@ -1171,7 +1265,8 @@ export class GsdService {
 
   /**
    * Sync a PLAN.md to kanban board
-   * Creates tasks in .auto-claude/specs/ from PLAN.md tasks
+   * Creates ONE spec in .auto-claude/specs/ from the entire PLAN.md
+   * Each PLAN.md becomes one spec with all tasks as subtasks
    */
   async syncPlanToKanban(planPath: string): Promise<GsdSyncResult> {
     const fullPath = path.join(this.projectPath, planPath);
@@ -1185,35 +1280,59 @@ export class GsdService {
 
     try {
       const content = fs.readFileSync(fullPath, 'utf-8');
-      const tasks = this.parsePlanTasks(content, planPath);
 
-      // Create spec files for each task
+      // Parse the full PLAN.md structure
+      const parsedPlan = this.parseFullPlan(content, planPath);
+
+      // Create spec directory
       const autoClaudeDir = path.join(this.projectPath, '.auto-claude', 'specs');
       if (!fs.existsSync(autoClaudeDir)) {
         fs.mkdirSync(autoClaudeDir, { recursive: true });
       }
 
-      const createdTasks: GsdTask[] = [];
+      // Generate spec ID from plan info (e.g., "01-02-implement-feature")
+      const specId = `${parsedPlan.phase}-${String(parsedPlan.planNumber).padStart(2, '0')}-${this.slugify(parsedPlan.objectiveTitle)}`;
+      const specDir = path.join(autoClaudeDir, specId);
 
-      for (const task of tasks) {
-        // Create spec directory
-        const specId = `${task.phase}-${String(task.task_number).padStart(2, '0')}-${this.slugify(task.title)}`;
-        const specDir = path.join(autoClaudeDir, specId);
-
-        if (!fs.existsSync(specDir)) {
-          fs.mkdirSync(specDir, { recursive: true });
-
-          // Create spec.md
-          const specContent = this.generateSpecContent(task);
-          fs.writeFileSync(path.join(specDir, 'spec.md'), specContent);
-
-          // Create implementation_plan.json
-          const planJson = this.generateImplementationPlan(task, specId);
-          fs.writeFileSync(path.join(specDir, 'implementation_plan.json'), JSON.stringify(planJson, null, 2));
-
-          createdTasks.push(task);
-        }
+      // Check if spec already exists
+      if (fs.existsSync(specDir)) {
+        logger.info(`Spec already exists: ${specId}, updating...`);
+      } else {
+        fs.mkdirSync(specDir, { recursive: true });
       }
+
+      // Create spec.md
+      const specContent = this.generateSpecFromPlan(parsedPlan);
+      fs.writeFileSync(path.join(specDir, 'spec.md'), specContent);
+
+      // Create implementation_plan.json (Auto-Claude compatible format)
+      const implementationPlan = this.generateAutoClaudeImplementationPlan(parsedPlan, specId);
+      fs.writeFileSync(path.join(specDir, 'implementation_plan.json'), JSON.stringify(implementationPlan, null, 2));
+
+      // Convert to GsdTask array for return value
+      const createdTasks: GsdTask[] = parsedPlan.tasks.map((task, idx) => ({
+        id: `${parsedPlan.phase}-${parsedPlan.planNumber}-${idx + 1}`,
+        title: task.name,
+        description: task.action,
+        status: 'pending',
+        phase: parsedPlan.phase,
+        plan: String(parsedPlan.planNumber),
+        task_number: idx + 1,
+        files: task.files,
+        action: task.action,
+        verify: task.verify,
+        done_criteria: task.done,
+        gsd_task_type: task.type,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          source: 'gsd',
+          plan_path: planPath,
+          spec_id: specId
+        }
+      }));
+
+      logger.info(`Synced PLAN.md to Auto-Claude spec: ${specId} with ${createdTasks.length} subtasks`);
 
       return {
         success: true,
@@ -1230,58 +1349,320 @@ export class GsdService {
   }
 
   /**
-   * Parse tasks from PLAN.md content
+   * Parse the full PLAN.md structure including objective, context, tasks, etc.
+   * Supports both XML format and Markdown format
    */
-  private parsePlanTasks(content: string, planPath: string): GsdTask[] {
-    const tasks: GsdTask[] = [];
-
-    // Parse frontmatter for phase/plan info
+  private parseFullPlan(content: string, planPath: string): ParsedGsdPlan {
     const frontmatter = this.parseFrontmatter(content);
-    const phase = frontmatter.phase || this.extractPhaseFromPath(planPath);
-    const plan = frontmatter.plan || this.extractPlanFromPath(planPath);
+    const phase = String(frontmatter.phase || this.extractPhaseFromPath(planPath));
+    const planNumber = Number(frontmatter.plan) || parseInt(this.extractPlanFromPath(planPath), 10) || 1;
+    const planType = String(frontmatter.type || 'execute');
+    const dependsOn = frontmatter.depends_on as string[] || [];
+    const filesModified = frontmatter.files_modified as string[] || [];
+    const planName = String(frontmatter.name || '');
 
-    // Parse <task> elements
+    // Parse objective - try XML first, then Markdown
+    let objectiveContent = this.extractXmlTag(content, 'objective') || '';
+
+    // If no XML objective, try Markdown format: ## Objective
+    if (!objectiveContent) {
+      const mdObjectiveMatch = /##\s*Objective\s*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
+      if (mdObjectiveMatch) {
+        objectiveContent = mdObjectiveMatch[1].trim();
+      }
+    }
+
+    const objectiveLines = objectiveContent.split('\n').filter(l => l.trim());
+    // Use frontmatter name or first objective line as title
+    const objectiveTitle = planName || objectiveLines[0] || `Phase ${phase} Plan ${planNumber}`;
+    const objectivePurpose = objectiveLines.find(l => l.toLowerCase().startsWith('purpose:'))?.replace(/^purpose:\s*/i, '') || objectiveContent || objectiveTitle;
+    const objectiveOutput = objectiveLines.find(l => l.toLowerCase().startsWith('output:'))?.replace(/^output:\s*/i, '') || '';
+
+    // Parse context references - try XML first, then Markdown
+    let contextContent = this.extractXmlTag(content, 'context') || '';
+    if (!contextContent) {
+      const mdContextMatch = /##\s*Context\s*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
+      if (mdContextMatch) {
+        contextContent = mdContextMatch[1].trim();
+      }
+    }
+    const contextRefs = contextContent.split('\n')
+      .filter(l => l.trim().startsWith('@'))
+      .map(l => l.trim().replace(/^@/, ''));
+
+    // Parse tasks
+    const tasks = this.parseTaskElements(content);
+
+    // Parse verification checklist - try XML first, then Markdown
+    let verificationContent = this.extractXmlTag(content, 'verification') || '';
+    if (!verificationContent) {
+      const mdVerifyMatch = /##\s*Verification\s*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
+      if (mdVerifyMatch) {
+        verificationContent = mdVerifyMatch[1].trim();
+      }
+    }
+    const verificationItems = verificationContent.split('\n')
+      .filter(l => l.trim().startsWith('- [') || l.trim().startsWith('-'))
+      .map(l => l.replace(/^-\s*\[.\]\s*/, '').replace(/^-\s*/, '').trim());
+
+    // Parse success criteria - try XML first, then Markdown
+    let successContent = this.extractXmlTag(content, 'success_criteria') || '';
+    if (!successContent) {
+      const mdSuccessMatch = /##\s*Success\s*Criteria\s*\n([\s\S]*?)(?=\n##\s|$)/i.exec(content);
+      if (mdSuccessMatch) {
+        successContent = mdSuccessMatch[1].trim();
+      }
+    }
+    const successCriteria = successContent.split('\n')
+      .filter(l => l.trim().startsWith('-'))
+      .map(l => l.replace(/^-\s*/, '').trim());
+
+    return {
+      phase,
+      planNumber,
+      planType,
+      dependsOn,
+      filesModified,
+      objectiveTitle,
+      objectivePurpose,
+      objectiveOutput,
+      contextRefs,
+      tasks,
+      verificationItems,
+      successCriteria,
+      planPath
+    };
+  }
+
+  /**
+   * Parse tasks from PLAN.md - supports both XML and Markdown formats
+   *
+   * XML format: <task type="..."><name>...</name><files>...</files>...</task>
+   * Markdown format: ### Task N: Title\n**File**: path\n\nDescription...\n\n**Acceptance**: ...
+   */
+  private parseTaskElements(content: string): ParsedGsdTask[] {
+    const tasks: ParsedGsdTask[] = [];
+
+    // Try XML format first: <task type="...">...</task>
     const taskRegex = /<task\s+type="([^"]+)">([\s\S]*?)<\/task>/g;
     let match;
-    let taskNumber = 1;
 
     while ((match = taskRegex.exec(content)) !== null) {
       const taskType = match[1];
       const taskContent = match[2];
 
-      const name = this.extractXmlTag(taskContent, 'name');
-      const files = this.extractXmlTag(taskContent, 'files')?.split(',').map(f => f.trim()) || [];
+      const name = this.extractXmlTag(taskContent, 'name') || 'Unnamed Task';
+      const filesRaw = this.extractXmlTag(taskContent, 'files') || '';
+      const files = filesRaw.split(',').map(f => f.trim()).filter(f => f);
       const action = this.extractXmlTag(taskContent, 'action') || '';
       const verify = this.extractXmlTag(taskContent, 'verify') || '';
       const done = this.extractXmlTag(taskContent, 'done') || '';
 
-      const now = new Date().toISOString();
-
       tasks.push({
-        id: `${phase}-${plan}-${taskNumber}`,
-        title: name || `Task ${taskNumber}`,
-        description: action,
-        status: 'pending',
-        phase: String(phase),
-        plan: String(plan),
-        task_number: taskNumber,
+        type: taskType,
+        name,
         files,
         action,
         verify,
-        done_criteria: done,
-        gsd_task_type: taskType,
-        created_at: now,
-        updated_at: now,
-        metadata: {
-          source: 'gsd',
-          plan_path: planPath
-        }
+        done
       });
+    }
 
-      taskNumber++;
+    // If no XML tasks found, try Markdown format: ### Task N: Title
+    if (tasks.length === 0) {
+      const mdTaskRegex = /###\s*Task\s*(\d+)[:\s]*([^\n]+)\n([\s\S]*?)(?=###\s*Task\s*\d+|---|\n## |$)/g;
+      let mdMatch;
+
+      while ((mdMatch = mdTaskRegex.exec(content)) !== null) {
+        const taskTitle = mdMatch[2].trim();
+        const taskContent = mdMatch[3];
+
+        // Extract file from **File**: or **Files**: line
+        const fileMatch = /\*\*Files?\*\*:\s*`?([^`\n]+)`?/i.exec(taskContent);
+        const files = fileMatch
+          ? fileMatch[1].split(',').map(f => f.trim().replace(/`/g, '')).filter(f => f)
+          : [];
+
+        // Extract description (everything before **Acceptance**: or end)
+        const descMatch = taskContent.split(/\*\*Acceptance\*\*:/i);
+        const description = descMatch[0]
+          .replace(/\*\*Files?\*\*:[^\n]+\n?/gi, '')
+          .trim();
+
+        // Extract acceptance criteria
+        const acceptance = descMatch[1]?.trim() || '';
+
+        tasks.push({
+          type: 'auto', // Default type for markdown tasks
+          name: taskTitle,
+          files,
+          action: description,
+          verify: '',
+          done: acceptance
+        });
+      }
     }
 
     return tasks;
+  }
+
+  /**
+   * Generate spec.md content from parsed plan
+   */
+  private generateSpecFromPlan(plan: ParsedGsdPlan): string {
+    const filesSection = plan.filesModified.length > 0
+      ? plan.filesModified.map(f => `- ${f}`).join('\n')
+      : '(determined during implementation)';
+
+    const tasksSection = plan.tasks.map((task, idx) =>
+      `### Task ${idx + 1}: ${task.name}\n\n${task.action}\n\n**Files:** ${task.files.join(', ') || 'TBD'}\n\n**Verification:** ${task.verify || 'N/A'}\n\n**Done when:** ${task.done}`
+    ).join('\n\n');
+
+    const acceptanceSection = plan.successCriteria.length > 0
+      ? plan.successCriteria.map(c => `- ${c}`).join('\n')
+      : plan.verificationItems.map(v => `- ${v}`).join('\n');
+
+    return `# ${plan.objectiveTitle}
+
+## Overview
+
+${plan.objectivePurpose}
+
+## Source
+
+- Phase: ${plan.phase}
+- Plan: ${plan.planNumber}
+- Type: ${plan.planType}
+- Path: ${plan.planPath}
+
+## Files to Modify
+
+${filesSection}
+
+## Implementation Tasks
+
+${tasksSection}
+
+## Acceptance Criteria
+
+${acceptanceSection}
+
+## Output
+
+${plan.objectiveOutput || 'Implementation complete with all tasks done.'}
+`;
+  }
+
+  /**
+   * Generate Auto-Claude compatible implementation_plan.json
+   */
+  private generateAutoClaudeImplementationPlan(plan: ParsedGsdPlan, specId: string): AutoClaudeImplementationPlan {
+    const now = new Date().toISOString();
+
+    // Convert GSD tasks to Auto-Claude subtasks
+    const subtasks: AutoClaudeSubtask[] = plan.tasks.map((task, idx) => {
+      // Determine files_to_modify vs files_to_create based on task type or heuristics
+      const filesToModify: string[] = [];
+      const filesToCreate: string[] = [];
+
+      for (const file of task.files) {
+        // If file path exists, it's a modification; otherwise creation
+        const fullPath = path.join(this.projectPath, file);
+        if (fs.existsSync(fullPath)) {
+          filesToModify.push(file);
+        } else {
+          filesToCreate.push(file);
+        }
+      }
+
+      // Also include files from frontmatter if not already in task
+      for (const file of plan.filesModified) {
+        if (!filesToModify.includes(file) && !filesToCreate.includes(file)) {
+          const fullPath = path.join(this.projectPath, file);
+          if (fs.existsSync(fullPath)) {
+            filesToModify.push(file);
+          } else {
+            filesToCreate.push(file);
+          }
+        }
+      }
+
+      // Build verification object if verify command exists
+      let verification: AutoClaudeVerification | undefined;
+      if (task.verify) {
+        verification = {
+          type: 'command',
+          run: task.verify,
+          scenario: task.done
+        };
+      }
+
+      return {
+        id: String(idx + 1),
+        description: `${task.name}\n\n${task.action}`,
+        status: 'pending',
+        files_to_modify: filesToModify,
+        files_to_create: filesToCreate,
+        verification,
+        expected_output: task.done
+      };
+    });
+
+    // Build the phase
+    const phase: AutoClaudePhase = {
+      phase: 1,
+      name: plan.objectiveTitle,
+      type: plan.planType === 'tdd' ? 'implementation' : 'implementation',
+      subtasks,
+      chunks: subtasks, // Backwards compatibility
+      parallel_safe: plan.tasks.every(t => t.type === 'auto')
+    };
+
+    // Build final acceptance criteria
+    const finalAcceptance = plan.successCriteria.length > 0
+      ? plan.successCriteria
+      : plan.verificationItems;
+
+    return {
+      feature: plan.objectiveTitle,
+      workflow_type: 'development',
+      services_involved: this.detectServicesFromFiles(plan.filesModified),
+      phases: [phase],
+      final_acceptance: finalAcceptance,
+      created_at: now,
+      updated_at: now,
+      spec_file: 'spec.md',
+      status: 'backlog',
+      planStatus: 'pending',
+      // GSD metadata
+      gsd_source: {
+        phase: plan.phase,
+        plan: plan.planNumber,
+        path: plan.planPath,
+        depends_on: plan.dependsOn
+      }
+    };
+  }
+
+  /**
+   * Detect which services are involved based on file paths
+   */
+  private detectServicesFromFiles(files: string[]): string[] {
+    const services = new Set<string>();
+
+    for (const file of files) {
+      if (file.includes('backend') || file.includes('.py')) {
+        services.add('backend');
+      }
+      if (file.includes('frontend') || file.includes('.tsx') || file.includes('.ts')) {
+        services.add('frontend');
+      }
+      if (file.includes('worker') || file.includes('queue')) {
+        services.add('worker');
+      }
+    }
+
+    return services.size > 0 ? Array.from(services) : ['backend'];
   }
 
   /**
@@ -1331,53 +1712,6 @@ export class GsdService {
   private extractPlanFromPath(planPath: string): string {
     const match = /PLAN-(\d{2}-\d{2})/.exec(path.basename(planPath));
     return match ? match[1] : '00-00';
-  }
-
-  /**
-   * Generate spec.md content from task
-   */
-  private generateSpecContent(task: GsdTask): string {
-    return `# ${task.title}
-
-## Overview
-
-${task.description}
-
-## Source
-
-- Phase: ${task.phase}
-- Plan: ${task.plan}
-- Task Type: ${task.gsd_task_type}
-
-## Files
-
-${task.files.map(f => `- ${f}`).join('\n')}
-
-## Success Criteria
-
-${task.done_criteria}
-
-## Verification
-
-${task.verify}
-`;
-  }
-
-  /**
-   * Generate implementation_plan.json from task
-   */
-  private generateImplementationPlan(task: GsdTask, specId: string): Record<string, unknown> {
-    return {
-      spec_id: specId,
-      subtasks: [{
-        id: '1',
-        title: task.title,
-        description: task.description,
-        files: task.files,
-        status: 'pending',
-        dependencies: []
-      }]
-    };
   }
 
   /**
