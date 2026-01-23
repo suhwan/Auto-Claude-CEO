@@ -326,7 +326,131 @@ const browserMockAPI: ElectronAPI = {
   openLogsFolder: async () => ({ success: false, error: 'Not available in browser mode' }),
   copyDebugInfo: async () => ({ success: false, error: 'Not available in browser mode' }),
   getRecentErrors: async () => [],
-  listLogFiles: async () => []
+  listLogFiles: async () => [],
+
+  // GSD (Get Shit Done) API
+  gsd: {
+    getRoadmap: async () => ({
+      success: true,
+      data: {
+        phases: [],
+        current_phase: 1,
+        total_phases: 0,
+        progress_percent: 0
+      }
+    }),
+    getState: async () => ({
+      success: true,
+      data: null
+    }),
+    getPlanDetail: async () => ({
+      success: true,
+      data: null
+    }),
+    getPhaseProgress: async () => ({
+      success: true,
+      data: {
+        total_phases: 0,
+        completed_phases: 0,
+        percent: 0,
+        current_phase: 1
+      }
+    }),
+    syncPlanToKanban: async () => ({
+      success: true,
+      data: {
+        success: true,
+        tasks: [],
+        task_count: 0
+      }
+    }),
+    syncPhaseToKanban: async () => ({
+      success: true,
+      data: {
+        success: true,
+        tasks: [],
+        task_count: 0
+      }
+    }),
+    updateTaskStatus: async () => ({
+      success: true,
+      data: { success: true }
+    }),
+    generateSummary: async () => ({
+      success: true,
+      data: { summaryPath: null }
+    }),
+    getSyncStatus: async () => ({
+      success: true,
+      data: {
+        synced_tasks: 0,
+        pending_tasks: 0,
+        completed_tasks: 0,
+        last_sync: null
+      }
+    }),
+    getSharedBoard: async () => ({
+      success: true,
+      data: null
+    }),
+    getLeaderContext: async () => ({
+      success: true,
+      data: null
+    }),
+    getPendingVerifications: async () => ({
+      success: true,
+      data: []
+    }),
+    submitVerification: async () => ({
+      success: true,
+      data: undefined
+    }),
+    createProject: async () => ({
+      success: true,
+      data: {
+        success: true,
+        projectPath: '.planning',
+        filesCreated: ['PROJECT.md', 'STATE.md', 'ROADMAP.md', 'config.json']
+      }
+    })
+  },
+
+  // CEO (Chief Executive Officer) API
+  ceo: {
+    loadAgents: async () => ({
+      success: true,
+      data: {
+        agents: {},
+        teams: {}
+      }
+    }),
+    getAgent: async () => ({
+      success: true,
+      data: null
+    }),
+    getTeams: async () => ({
+      success: true,
+      data: {}
+    }),
+    classifyTask: async () => ({
+      success: true,
+      data: {
+        task_type: 'coding' as const,
+        target: 'auto-claude',
+        confidence: 0.5,
+        keywords_matched: []
+      }
+    }),
+    routeTask: async () => ({
+      success: true,
+      data: {
+        task_type: 'coding' as const,
+        target: 'auto-claude',
+        confidence: 0.5,
+        keywords_matched: []
+      }
+    })
+  }
 };
 
 /**

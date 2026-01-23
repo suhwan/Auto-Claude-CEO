@@ -31,6 +31,7 @@ except (ImportError, ValueError, SystemError):
     # (services/__init__.py imports pr_review_engine which imports context_gatherer)
     from core.io_utils import safe_print
     from gh_client import GHClient, PRTooLargeError
+    from services.io_utils import safe_print
 
 # Validation patterns for git refs and paths (defense-in-depth)
 # These patterns allow common valid characters while rejecting potentially dangerous ones

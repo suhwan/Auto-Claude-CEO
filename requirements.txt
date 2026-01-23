@@ -1,0 +1,2 @@
+# GSD Converter dependencies
+pyyaml>=6.0

@@ -174,11 +174,18 @@ export type TaskCategory =
 
 export interface TaskMetadata {
   // Origin tracking
-  sourceType?: 'ideation' | 'manual' | 'imported' | 'insights' | 'roadmap' | 'linear' | 'github' | 'gitlab';
+  sourceType?: 'ideation' | 'manual' | 'imported' | 'insights' | 'roadmap' | 'linear' | 'github' | 'gitlab' | 'gsd_plan';
   ideationType?: string;  // e.g., 'code_improvements', 'security_hardening'
   ideaId?: string;  // Reference to original idea if converted
   featureId?: string;  // Reference to roadmap feature if from roadmap
   linearIssueId?: string;  // Reference to Linear issue if from Linear
+
+  // GSD Integration
+  gsdPhase?: number;        // Phase number
+  gsdPlanNumber?: number;   // Plan number (e.g., 1, 2, 3)
+  gsdPlanId?: string;       // Plan ID (e.g., "01-01", "02-03")
+  gsdParallelSafe?: boolean; // Whether plan can be executed in parallel
+  gsdDependsOn?: string[];  // Plan IDs this task depends on
   linearIdentifier?: string;  // Linear issue identifier (e.g., 'ABC-123')
   linearUrl?: string;  // Linear issue URL
   githubIssueNumber?: number;  // Reference to GitHub issue number if from GitHub (single issue)
@@ -265,6 +272,9 @@ export interface Task {
   stagedAt?: string;  // ISO timestamp when changes were staged
   location?: 'main' | 'worktree';  // Where task was loaded from (main project or worktree)
   specsPath?: string;  // Full path to specs directory for this task
+  // GSD Phase grouping
+  groupId?: string;         // Phase group ID (e.g., "gsd-phase-1")
+  groupName?: string;       // Phase group name (e.g., "Phase 1: Foundation")
   createdAt: Date;
   updatedAt: Date;
 }

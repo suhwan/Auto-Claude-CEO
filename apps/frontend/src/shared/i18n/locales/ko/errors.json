@@ -1,0 +1,5 @@
+{
+  "task": {
+    "parseImplementationPlan": "{{specId}}의 implementation_plan.json 파싱 실패: {{error}}"
+  }
+}

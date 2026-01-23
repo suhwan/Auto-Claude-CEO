@@ -43,6 +43,7 @@ interface IdeationState {
   setConfig: (config: Partial<IdeationConfig>) => void;
   updateIdeaStatus: (ideaId: string, status: IdeationStatus) => void;
   setIdeaTaskId: (ideaId: string, taskId: string) => void;
+  setIdeaGsdPath: (ideaId: string, gsdProjectPath: string) => void;
   dismissIdea: (ideaId: string) => void;
   dismissAllIdeas: () => void;
   archiveIdea: (ideaId: string) => void;
@@ -150,6 +151,25 @@ export const useIdeationStore = create<IdeationState>((set) => ({
       const updatedIdeas = state.session.ideas.map((idea) =>
         idea.id === ideaId
           ? { ...idea, taskId, status: 'archived' as IdeationStatus }
+          : idea
+      );
+
+      return {
+        session: {
+          ...state.session,
+          ideas: updatedIdeas,
+          updatedAt: new Date()
+        }
+      };
+    }),
+
+  setIdeaGsdPath: (ideaId, gsdProjectPath) =>
+    set((state) => {
+      if (!state.session) return state;
+
+      const updatedIdeas = state.session.ideas.map((idea) =>
+        idea.id === ideaId
+          ? { ...idea, gsdProjectPath, status: 'gsd_converted' as IdeationStatus }
           : idea
       );
 

@@ -520,5 +520,42 @@ export const IPC_CHANNELS = {
   // Sentry error reporting
   SENTRY_STATE_CHANGED: 'sentry:state-changed',  // Notify main process when setting changes
   GET_SENTRY_DSN: 'sentry:get-dsn',              // Get DSN from main process (env var)
-  GET_SENTRY_CONFIG: 'sentry:get-config'         // Get full Sentry config (DSN + sample rates)
+  GET_SENTRY_CONFIG: 'sentry:get-config',         // Get full Sentry config (DSN + sample rates)
+
+  // GSD (Get Shit Done) workflow operations
+  GSD_GET_ROADMAP: 'gsd:getRoadmap',
+  GSD_GET_STATE: 'gsd:getState',
+  GSD_GET_PLAN_DETAIL: 'gsd:getPlanDetail',
+  GSD_GET_PHASE_PROGRESS: 'gsd:getPhaseProgress',
+  GSD_SYNC_PLAN_TO_KANBAN: 'gsd:syncPlanToKanban',
+  GSD_SYNC_PHASE_TO_KANBAN: 'gsd:syncPhaseToKanban',
+  GSD_UPDATE_TASK_STATUS: 'gsd:updateTaskStatus',
+  GSD_GENERATE_SUMMARY: 'gsd:generateSummary',
+  GSD_GET_SYNC_STATUS: 'gsd:getSyncStatus',
+  GSD_GET_SHARED_BOARD: 'gsd:getSharedBoard',
+  GSD_GET_LEADER_CONTEXT: 'gsd:getLeaderContext',
+  GSD_GET_PENDING_VERIFICATIONS: 'gsd:getPendingVerifications',
+  GSD_SUBMIT_VERIFICATION: 'gsd:submitVerification',
+  GSD_CREATE_PROJECT: 'gsd:createProject',
+  GSD_GENERATE_ROADMAP: 'gsd:generateRoadmap',
+  GSD_CANCEL_GENERATION: 'gsd:cancelGeneration',
+  GSD_PLAN_PHASE: 'gsd:planPhase',
+  GSD_RESEARCH_PHASE: 'gsd:researchPhase',
+  GSD_EXECUTE_PLAN: 'gsd:executePlan',
+  GSD_CANCEL_PLAN: 'gsd:cancelPlan',
+  GSD_START_CHAT_SESSION: 'gsd:startChatSession',
+  GSD_SEND_CHAT_MESSAGE: 'gsd:sendChatMessage',
+  GSD_END_CHAT_SESSION: 'gsd:endChatSession',
+  GSD_GET_KANBAN_TASKS: 'gsd:getKanbanTasks',
+  GSD_SYNC_TO_KANBAN: 'gsd:syncToKanban',
+  GSD_GET_EXECUTION_PLAN: 'gsd:getExecutionPlan',
+  GSD_EXECUTE_PHASE_PARALLEL: 'gsd:executePhaseParallel',
+  GSD_CANCEL_PARALLEL_EXECUTION: 'gsd:cancelParallelExecution',
+
+  // CEO (Chief Executive Officer) agent operations
+  CEO_LOAD_AGENTS: 'ceo:loadAgents',
+  CEO_GET_AGENT: 'ceo:getAgent',
+  CEO_GET_TEAMS: 'ceo:getTeams',
+  CEO_CLASSIFY_TASK: 'ceo:classifyTask',
+  CEO_ROUTE_TASK: 'ceo:routeTask'
 } as const;

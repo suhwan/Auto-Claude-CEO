@@ -1,0 +1,52 @@
+{
+  "12-04": {
+    "plan_id": "12-04",
+    "plan_name": "Parallel Execution and Dependency Management",
+    "phase": 12,
+    "auto_qa_passed": true,
+    "verification_status": "approved",
+    "checklist": [
+      {
+        "id": "1",
+        "description": "Feature works as expected",
+        "checked": true
+      },
+      {
+        "id": "2",
+        "description": "UI displays correctly",
+        "checked": true
+      },
+      {
+        "id": "3",
+        "description": "No visual bugs",
+        "checked": true
+      }
+    ],
+    "verified_at": "2026-01-22T15:07:49.729Z"
+  },
+  "12-02": {
+    "plan_id": "12-02",
+    "plan_name": "GSD to Kanban Phase Grouping",
+    "phase": 12,
+    "auto_qa_passed": true,
+    "verification_status": "approved",
+    "checklist": [
+      {
+        "id": "1",
+        "description": "Feature works as expected",
+        "checked": true
+      },
+      {
+        "id": "2",
+        "description": "UI displays correctly",
+        "checked": true
+      },
+      {
+        "id": "3",
+        "description": "No visual bugs",
+        "checked": true
+      }
+    ],
+    "verified_at": "2026-01-22T15:08:02.802Z"
+  }
+}
