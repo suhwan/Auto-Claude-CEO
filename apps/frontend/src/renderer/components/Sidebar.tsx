@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../shared/i18n';
 import {
   Plus,
   Settings,
@@ -299,8 +300,20 @@ export function Sidebar({
     <TooltipProvider>
       <div className="flex h-full w-64 flex-col bg-sidebar border-r border-border">
         {/* Header with drag area - extra top padding for macOS traffic lights */}
-        <div className="electron-drag flex h-14 items-center px-4 pt-6">
+        <div className="electron-drag flex h-14 items-center justify-between px-4 pt-6">
           <span className="electron-no-drag text-lg font-bold text-primary">Auto Claude</span>
+          {/* Language Toggle Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="electron-no-drag h-7 px-2 text-xs"
+            onClick={() => {
+              const newLang = i18n.language === 'ko' ? 'en' : 'ko';
+              i18n.changeLanguage(newLang);
+            }}
+          >
+            {i18n.language === 'ko' ? 'EN' : '한글'}
+          </Button>
         </div>
 
         <Separator className="mt-2" />
