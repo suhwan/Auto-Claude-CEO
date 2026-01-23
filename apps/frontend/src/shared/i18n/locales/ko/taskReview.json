@@ -1,0 +1,66 @@
+{
+  "terminal": {
+    "openTerminal": "터미널 열기",
+    "openInbuilt": "내장 터미널에서 열기",
+    "openExternal": "외부 터미널에서 열기"
+  },
+  "merge": {
+    "branchHasNewCommits": "{{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "branchHasNewCommits_other": "{{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "branchHasNewCommitsSinceWorktree": "이 워크트리가 생성된 이후 {{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "branchHasNewCommitsSinceWorktree_other": "이 워크트리가 생성된 이후 {{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "filesNeedMerging": "{{count}}개 파일을 병합해야 합니다.",
+    "filesNeedMerging_other": "{{count}}개 파일을 병합해야 합니다.",
+    "filesNeedIntelligentMerging": "{{count}}개 파일에 지능적 병합이 필요합니다:",
+    "filesNeedIntelligentMerging_other": "{{count}}개 파일에 지능적 병합이 필요합니다:",
+    "branchHasNewCommitsSinceBuild": "이 빌드가 시작된 이후 {{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "branchHasNewCommitsSinceBuild_other": "이 빌드가 시작된 이후 {{branch}} 브랜치에 {{count}}개의 새 커밋이 있습니다.",
+    "filesNeedAIMergeDueToRenames": "{{count}}개 파일에 {{renameCount}}개의 파일 이름 변경으로 인해 AI 병합이 필요합니다.",
+    "filesNeedAIMergeDueToRenames_other": "{{count}}개 파일에 {{renameCount}}개의 파일 이름 변경으로 인해 AI 병합이 필요합니다.",
+    "filesNeedAIMergeDueToRenamesPlural": "{{count}}개 파일에 {{renameCount}}개의 파일 이름 변경으로 인해 AI 병합이 필요합니다.",
+    "filesNeedAIMergeDueToRenamesPlural_other": "{{count}}개 파일에 {{renameCount}}개의 파일 이름 변경으로 인해 AI 병합이 필요합니다.",
+    "fileRenamesDetected": "{{count}}개의 파일 이름 변경이 감지되었습니다 - AI가 병합을 처리합니다.",
+    "fileRenamesDetected_other": "{{count}}개의 파일 이름 변경이 감지되었습니다 - AI가 병합을 처리합니다.",
+    "filesRenamedOrMoved": "파일이 이름이 변경되거나 이동되었을 수 있습니다 - AI가 병합을 처리합니다.",
+    "buttons": {
+      "stageWithAIMerge": "AI 병합으로 스테이지",
+      "mergeWithAI": "AI로 병합",
+      "stageTo": "{{branch}}에 스테이지",
+      "mergeTo": "{{branch}}에 병합",
+      "resolving": "해결 중...",
+      "staging": "스테이징 중...",
+      "merging": "병합 중..."
+    }
+  },
+  "pr": {
+    "title": "Pull Request 생성",
+    "description": "\"{{taskTitle}}\"에 대한 브랜치를 푸시하고 Pull Request 생성",
+    "errors": {
+      "unknown": "Pull Request를 생성하는 중 알 수 없는 오류가 발생했습니다",
+      "invalidBranchName": "브랜치 이름에 잘못된 문자가 포함되어 있습니다. 문자, 숫자, 하이픈(-), 밑줄(_) 및 슬래시(/)만 사용하세요.",
+      "emptyTitle": "Pull Request 제목은 비워둘 수 없습니다."
+    },
+    "success": {
+      "created": "Pull Request가 성공적으로 생성되었습니다!",
+      "alreadyExists": "이 브랜치에 대한 Pull Request가 이미 존재합니다"
+    },
+    "actions": {
+      "retry": "재시도",
+      "creating": "PR 생성 중...",
+      "create": "Pull Request 생성"
+    },
+    "labels": {
+      "sourceBranch": "소스 브랜치",
+      "targetBranch": "대상 브랜치",
+      "commits": "커밋",
+      "changes": "변경사항",
+      "prTitle": "PR 제목 (선택사항)",
+      "draftPR": "Draft PR로 생성",
+      "unknown": "알 수 없음"
+    },
+    "hints": {
+      "targetBranch": "기본 브랜치를 사용하려면 비워 두세요",
+      "prTitle": "작업 제목을 사용하려면 비워 두세요"
+    }
+  }
+}

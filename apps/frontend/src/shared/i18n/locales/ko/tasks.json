@@ -1,0 +1,229 @@
+{
+  "refreshTasks": "작업 새로고침",
+  "status": {
+    "backlog": "백로그",
+    "todo": "할 일",
+    "in_progress": "진행 중",
+    "review": "검토",
+    "prCreated": "PR 생성됨",
+    "complete": "완료",
+    "archived": "보관됨"
+  },
+  "actions": {
+    "start": "시작",
+    "stop": "중지",
+    "recover": "복구",
+    "resume": "재개",
+    "archive": "보관",
+    "delete": "삭제",
+    "view": "상세 보기",
+    "viewPR": "PR 보기",
+    "moveTo": "이동",
+    "taskActions": "작업 액션"
+  },
+  "labels": {
+    "running": "실행 중",
+    "aiReview": "AI 검토",
+    "needsReview": "검토 필요",
+    "pending": "대기 중",
+    "stuck": "중단됨",
+    "incomplete": "미완료",
+    "recovering": "복구 중...",
+    "needsRecovery": "복구 필요",
+    "needsResume": "재개 필요"
+  },
+  "reviewReason": {
+    "completed": "완료됨",
+    "hasErrors": "오류 있음",
+    "qaIssues": "QA 이슈",
+    "approvePlan": "계획 승인"
+  },
+  "tooltips": {
+    "archiveTask": "작업 보관",
+    "archiveAllDone": "완료된 모든 작업 보관",
+    "viewPR": "브라우저에서 Pull Request 열기"
+  },
+  "creation": {
+    "title": "새 작업 생성",
+    "description": "만들고 싶은 것을 설명하세요",
+    "placeholder": "작업을 설명하세요..."
+  },
+  "empty": {
+    "title": "아직 작업이 없습니다",
+    "description": "시작하려면 첫 번째 작업을 생성하세요"
+  },
+  "columns": {
+    "error": "오류",
+    "backlog": "계획",
+    "in_progress": "진행 중",
+    "ai_review": "AI 검토",
+    "human_review": "사람 검토",
+    "done": "완료",
+    "pr_created": "PR 생성됨"
+  },
+  "kanban": {
+    "emptyBacklog": "계획된 작업 없음",
+    "emptyBacklogHint": "시작하려면 작업을 추가하세요",
+    "emptyInProgress": "실행 중인 작업 없음",
+    "emptyInProgressHint": "백로그에서 작업을 시작하세요",
+    "emptyAiReview": "검토 중인 작업 없음",
+    "emptyAiReviewHint": "AI가 완료된 작업을 검토합니다",
+    "emptyHumanReview": "검토할 항목 없음",
+    "emptyHumanReviewHint": "작업이 여기서 승인을 기다립니다",
+    "emptyDone": "완료된 작업 없음",
+    "emptyDoneHint": "승인된 작업이 여기에 표시됩니다",
+    "emptyError": "오류 작업 없음",
+    "emptyErrorHint": "파싱 실패 시 오류 작업이 여기에 표시됩니다",
+    "emptyDefault": "작업 없음",
+    "dropHere": "여기에 놓기",
+    "showArchived": "보관됨 표시",
+    "addTaskAriaLabel": "백로그에 새 작업 추가",
+    "closeTaskDetailsAriaLabel": "작업 상세 닫기",
+    "editTask": "작업 편집",
+    "cannotEditWhileRunning": "작업 실행 중에는 편집할 수 없습니다",
+    "worktreeCleanupTitle": "워크트리 정리",
+    "worktreeCleanupStaged": "이 작업이 스테이징되어 워크트리가 있습니다. 워크트리를 정리하시겠습니까?",
+    "worktreeCleanupNotStaged": "이 작업에는 병합되지 않은 변경사항이 있는 워크트리가 있습니다. 완료로 표시하려면 워크트리를 삭제하거나 변경사항을 먼저 검토하려면 취소하세요.",
+    "keepWorktree": "워크트리 유지",
+    "deleteWorktree": "워크트리 삭제 및 완료 표시",
+    "refreshTasks": "작업 새로고침"
+  },
+  "execution": {
+    "phases": {
+      "idle": "유휴",
+      "planning": "계획 중",
+      "coding": "코딩 중",
+      "reviewing": "검토 중",
+      "fixing": "수정 중",
+      "complete": "완료",
+      "failed": "실패"
+    },
+    "labels": {
+      "interrupted": "중단됨",
+      "progress": "진행률",
+      "entry": "항목",
+      "entries": "항목"
+    },
+    "shortPhases": {
+      "plan": "계획",
+      "code": "코드",
+      "qa": "QA"
+    }
+  },
+  "files": {
+    "title": "파일",
+    "tab": "파일",
+    "noSpecPath": "사용 가능한 스펙 파일 없음",
+    "noFiles": "파일을 찾을 수 없음",
+    "loading": "파일 로딩 중...",
+    "loadingContent": "내용 로딩 중...",
+    "errorLoading": "파일 로드 실패",
+    "errorLoadingContent": "파일 내용 로드 실패",
+    "retry": "재시도",
+    "selectFile": "내용을 보려면 파일을 선택하세요",
+    "openInIDE": "IDE에서 열기"
+  },
+  "metadata": {
+    "severity": "심각도",
+    "pullRequest": "Pull Request"
+  },
+  "images": {
+    "removeImageAriaLabel": "이미지 {{filename}} 제거",
+    "pasteHint": "팁: {{shortcut}}로 스크린샷을 직접 붙여넣어 참조 이미지를 추가하세요."
+  },
+  "notifications": {
+    "backgroundTaskTitle": "작업이 백그라운드에서 계속됩니다",
+    "backgroundTaskDescription": "작업이 여전히 실행 중입니다. 진행 상황을 모니터링하려면 이 대화 상자를 다시 열 수 있습니다."
+  },
+  "wizard": {
+    "createTitle": "새 작업 생성",
+    "createDescription": "만들고 싶은 것을 설명하세요. AI가 요청을 분석하고 상세한 스펙을 생성합니다.",
+    "descriptionPlaceholder": "구현하려는 기능, 버그 수정 또는 개선 사항을 설명하세요. 요구사항, 제약조건 및 예상 동작에 대해 가능한 한 구체적으로 작성하세요. @를 입력하여 파일을 참조하세요.",
+    "draftRestored": "초안 복원됨",
+    "startFresh": "새로 시작",
+    "hideFiles": "파일 숨기기",
+    "browseFiles": "파일 찾아보기",
+    "creating": "생성 중...",
+    "createTask": "작업 생성",
+    "gitOptions": {
+      "title": "Git 옵션 (선택사항)",
+      "baseBranchLabel": "기본 브랜치 (선택사항)",
+      "useProjectDefault": "프로젝트 기본값 사용",
+      "useProjectDefaultWithBranch": "프로젝트 기본값 사용 ({{branch}})",
+      "helpText": "이 작업의 워크트리가 생성될 브랜치를 재정의합니다. 프로젝트의 구성된 기본 브랜치를 사용하려면 비워 두세요.",
+      "useWorktreeLabel": "격리된 작업 공간 사용 (권장)",
+      "useWorktreeDescription": "병합 전 안전한 검토를 위해 별도의 git 워크트리에 변경사항을 생성합니다. 프로젝트에서 직접 빌드하려면 비활성화하세요 (더 빠르지만 위험함)."
+    },
+    "errors": {
+      "createFailed": "작업 생성에 실패했습니다. 다시 시도해 주세요."
+    }
+  },
+  "edit": {
+    "title": "작업 편집",
+    "description": "제목, 설명, 분류, 이미지 및 설정을 포함한 작업 세부 정보를 업데이트합니다. 변경사항은 스펙 파일에 저장됩니다.",
+    "saveChanges": "변경사항 저장",
+    "errors": {
+      "updateFailed": "작업 업데이트에 실패했습니다. 다시 시도해 주세요."
+    }
+  },
+  "form": {
+    "description": "설명",
+    "descriptionPlaceholder": "구현하려는 기능, 버그 수정 또는 개선 사항을 설명하세요. 요구사항, 제약조건 및 예상 동작에 대해 가능한 한 구체적으로 작성하세요.",
+    "imageAddedSuccess": "이미지가 성공적으로 추가되었습니다!",
+    "taskTitle": "작업 제목",
+    "titlePlaceholder": "설명에서 자동 생성하려면 비워 두세요",
+    "titleHelpText": "비워 두면 짧고 설명적인 제목이 자동으로 생성됩니다.",
+    "classificationOptional": "분류 (선택사항)",
+    "requireReviewLabel": "코딩 전 사람 검토 필요",
+    "requireReviewDescription": "활성화하면 코딩 단계가 시작되기 전에 스펙과 구현 계획을 검토하라는 메시지가 표시됩니다. 이를 통해 승인, 변경 요청 또는 피드백을 제공할 수 있습니다.",
+    "errors": {
+      "descriptionRequired": "설명을 제공해 주세요",
+      "maxImagesReached": "최대 5개의 이미지만 허용됩니다",
+      "invalidImageType": "잘못된 이미지 유형입니다. 허용: PNG, JPEG, GIF, WebP",
+      "processPasteFailed": "붙여넣은 이미지 처리 실패",
+      "processDropFailed": "드롭한 이미지 처리 실패"
+    },
+    "classification": {
+      "category": "카테고리",
+      "selectCategory": "카테고리 선택",
+      "priority": "우선순위",
+      "selectPriority": "우선순위 선택",
+      "complexity": "복잡도",
+      "selectComplexity": "복잡도 선택",
+      "impact": "영향도",
+      "selectImpact": "영향도 선택",
+      "helpText": "이 라벨은 작업을 구성하고 우선순위를 지정하는 데 도움이 됩니다. 선택사항이지만 필터링에 유용합니다.",
+      "values": {
+        "category": {
+          "feature": "기능",
+          "bug_fix": "버그 수정",
+          "refactoring": "리팩토링",
+          "documentation": "문서",
+          "security": "보안"
+        },
+        "priority": {
+          "low": "낮음",
+          "medium": "중간",
+          "high": "높음",
+          "urgent": "긴급"
+        },
+        "complexity": {
+          "trivial": "아주 쉬움",
+          "small": "쉬움",
+          "medium": "중간",
+          "large": "어려움",
+          "complex": "복잡"
+        },
+        "impact": {
+          "low": "낮은 영향",
+          "medium": "중간 영향",
+          "high": "높은 영향",
+          "critical": "치명적 영향"
+        }
+      }
+    }
+  },
+  "subtasks": {
+    "untitled": "제목 없는 하위 작업"
+  }
+}

@@ -1,0 +1,576 @@
+{
+  "title": "설정",
+  "tabs": {
+    "app": "앱 설정",
+    "project": "프로젝트 설정"
+  },
+  "sections": {
+    "appearance": {
+      "title": "외관",
+      "description": "Auto Claude의 모양 사용자 지정"
+    },
+    "display": {
+      "title": "디스플레이",
+      "description": "UI 요소의 크기 조정"
+    },
+    "language": {
+      "title": "언어",
+      "description": "선호하는 언어 선택"
+    },
+    "devtools": {
+      "title": "개발자 도구",
+      "description": "IDE 및 터미널 기본 설정"
+    },
+    "agent": {
+      "title": "에이전트 설정",
+      "description": "기본 모델 및 프레임워크"
+    },
+    "paths": {
+      "title": "경로",
+      "description": "CLI 도구 및 프레임워크 경로"
+    },
+    "integrations": {
+      "title": "연동",
+      "description": "API 키 및 Claude 계정"
+    },
+    "api-profiles": {
+      "title": "API 프로필",
+      "description": "사용자 지정 API 엔드포인트 프로필"
+    },
+    "updates": {
+      "title": "업데이트",
+      "description": "Auto Claude 업데이트"
+    },
+    "notifications": {
+      "title": "알림",
+      "description": "알림 설정"
+    },
+    "debug": {
+      "title": "디버그 및 로그",
+      "description": "문제 해결 도구"
+    }
+  },
+  "apiProfiles": {
+    "title": "API 프로필",
+    "description": "사용자 지정 Anthropic 호환 API 엔드포인트 구성",
+    "addButton": "프로필 추가",
+    "presets": {
+      "anthropic": "Anthropic",
+      "openrouter": "OpenRouter",
+      "groq": "Groq",
+      "glmGlobal": "GLM (글로벌)",
+      "glmChina": "GLM (중국)"
+    },
+    "fields": {
+      "name": "이름",
+      "preset": "프리셋",
+      "baseUrl": "기본 URL",
+      "apiKey": "API 키"
+    },
+    "placeholders": {
+      "name": "내 사용자 지정 API",
+      "preset": "공급자 프리셋 선택",
+      "baseUrl": "https://api.anthropic.com",
+      "apiKey": "sk-ant-..."
+    },
+    "hints": {
+      "preset": "프리셋이 기본 URL을 채웁니다. API 키는 여전히 붙여넣기해야 합니다.",
+      "baseUrl": "예: https://api.anthropic.com 또는 http://localhost:8080"
+    },
+    "validation": {
+      "nameRequired": "이름이 필요합니다",
+      "baseUrlRequired": "기본 URL이 필요합니다",
+      "baseUrlInvalid": "잘못된 URL 형식 (http:// 또는 https://이어야 함)",
+      "apiKeyRequired": "API 키가 필요합니다",
+      "apiKeyInvalid": "잘못된 API 키 형식"
+    },
+    "actions": {
+      "save": "프로필 저장",
+      "saving": "저장 중...",
+      "cancel": "취소",
+      "changeKey": "변경",
+      "cancelKeyChange": "취소"
+    },
+    "testConnection": {
+      "label": "연결 테스트",
+      "testing": "테스트 중...",
+      "success": "연결 성공",
+      "failure": "연결 실패"
+    },
+    "models": {
+      "title": "선택사항: 모델 이름 매핑",
+      "description": "API 공급자에서 모델을 선택합니다. 기본값을 사용하려면 비워 두세요.",
+      "defaultLabel": "기본 모델 (선택사항)",
+      "haikuLabel": "Haiku 모델 (선택사항)",
+      "sonnetLabel": "Sonnet 모델 (선택사항)",
+      "opusLabel": "Opus 모델 (선택사항)",
+      "defaultPlaceholder": "예: claude-3-5-sonnet-20241022",
+      "haikuPlaceholder": "예: claude-3-5-haiku-20241022",
+      "sonnetPlaceholder": "예: claude-3-5-sonnet-20241022",
+      "opusPlaceholder": "예: claude-3-5-opus-20241022"
+    },
+    "empty": {
+      "title": "구성된 API 프로필 없음",
+      "description": "빌드를 위한 사용자 지정 API 엔드포인트를 구성하려면 프로필을 만드세요.",
+      "action": "첫 번째 프로필 만들기"
+    },
+    "switchToOauth": {
+      "label": "OAuth로 전환",
+      "loading": "전환 중..."
+    },
+    "activeBadge": "활성",
+    "customModels": "사용자 지정 모델: {{models}}",
+    "setActive": {
+      "label": "활성으로 설정",
+      "loading": "설정 중..."
+    },
+    "tooltips": {
+      "edit": "프로필 편집",
+      "deleteActive": "삭제하기 전에 OAuth로 전환",
+      "deleteInactive": "프로필 삭제"
+    },
+    "deleteAriaLabel": "프로필 {{name}} 삭제",
+    "toast": {
+      "create": {
+        "title": "프로필 생성됨",
+        "description": "\"{{name}}\"이(가) 성공적으로 추가되었습니다."
+      },
+      "update": {
+        "title": "프로필 업데이트됨",
+        "description": "\"{{name}}\"이(가) 성공적으로 업데이트되었습니다."
+      },
+      "delete": {
+        "title": "프로필 삭제됨",
+        "description": "\"{{name}}\"이(가) 제거되었습니다.",
+        "errorTitle": "프로필 삭제 실패",
+        "errorFallback": "프로필을 삭제하는 중 오류가 발생했습니다."
+      },
+      "switch": {
+        "oauthTitle": "OAuth로 전환됨",
+        "oauthDescription": "이제 OAuth 인증을 사용합니다",
+        "profileTitle": "프로필 활성화됨",
+        "profileDescription": "이제 {{name}}을(를) 사용합니다",
+        "errorTitle": "인증 전환 실패",
+        "errorFallback": "인증 방법을 전환하는 중 오류가 발생했습니다."
+      }
+    },
+    "dialog": {
+      "createTitle": "API 프로필 추가",
+      "editTitle": "프로필 편집",
+      "description": "빌드를 위한 사용자 지정 Anthropic 호환 API 엔드포인트를 구성합니다.",
+      "deleteTitle": "프로필 삭제?",
+      "deleteDescription": "\"{{name}}\"을(를) 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.",
+      "cancel": "취소",
+      "delete": "삭제",
+      "deleting": "삭제 중..."
+    }
+  },
+  "modelSelect": {
+    "placeholder": "모델을 선택하거나 수동으로 입력",
+    "placeholderManual": "모델 이름 입력 (예: claude-3-5-sonnet-20241022)",
+    "searchPlaceholder": "모델 검색...",
+    "noResults": "검색과 일치하는 모델 없음",
+    "discoveryNotAvailable": "모델 검색을 사용할 수 없습니다. 모델 이름을 수동으로 입력하세요."
+  },
+  "language": {
+    "label": "인터페이스 언어",
+    "description": "애플리케이션 인터페이스의 언어 선택"
+  },
+  "scale": {
+    "presets": "크기 프리셋",
+    "presetsDescription": "일반적인 선호도에 대한 빠른 크기 옵션",
+    "fineTune": "크기 미세 조정",
+    "fineTuneDescription": "5% 단위로 75%에서 200%까지 조정",
+    "default": "기본",
+    "comfortable": "편안함",
+    "large": "크게"
+  },
+  "general": {
+    "otherAgentSettings": "기타 에이전트 설정",
+    "otherAgentSettingsDescription": "추가 에이전트 구성 옵션",
+    "agentFramework": "에이전트 프레임워크",
+    "agentFrameworkDescription": "자율 작업에 사용되는 코딩 프레임워크",
+    "agentFrameworkAutoClaude": "Auto Claude",
+    "aiTerminalNaming": "AI 터미널 이름 지정",
+    "aiTerminalNamingDescription": "명령어를 기반으로 터미널 이름 자동 지정 (Haiku 사용)",
+    "featureModelSettings": "기능 모델 설정",
+    "featureModelSettingsDescription": "인사이트, 아이디어, 로드맵의 모델 및 사고 레벨",
+    "model": "모델",
+    "thinkingLevel": "사고 레벨",
+    "paths": "경로",
+    "pathsDescription": "실행 파일 및 프레임워크 경로 구성",
+    "pythonPath": "Python 경로",
+    "pythonPathDescription": "Python 실행 파일 경로 (자동 감지는 비워 두세요)",
+    "pythonPathPlaceholder": "python3 (기본값)",
+    "gitPath": "Git 경로",
+    "gitPathDescription": "Git 실행 파일 경로 (자동 감지는 비워 두세요)",
+    "gitPathPlaceholder": "git (기본값)",
+    "githubCLIPath": "GitHub CLI 경로",
+    "githubCLIPathDescription": "GitHub CLI (gh) 실행 파일 경로 (자동 감지는 비워 두세요)",
+    "githubCLIPathPlaceholder": "gh (기본값)",
+    "claudePath": "Claude CLI 경로",
+    "claudePathDescription": "Claude CLI 실행 파일 경로 (자동 감지는 비워 두세요)",
+    "claudePathPlaceholder": "claude (기본값)",
+    "detectedPath": "자동 감지됨",
+    "detectedVersion": "버전",
+    "detectedSource": "소스",
+    "sourceUserConfig": "사용자 구성",
+    "sourceVenv": "가상 환경",
+    "sourceHomebrew": "Homebrew",
+    "sourceNvm": "NVM",
+    "sourceSystemPath": "시스템 PATH",
+    "sourceBundled": "번들됨",
+    "sourceFallback": "대체",
+    "notDetected": "감지되지 않음",
+    "autoClaudePath": "Auto Claude 경로",
+    "autoClaudePathDescription": "프로젝트의 auto-claude 디렉토리 상대 경로",
+    "autoClaudePathPlaceholder": "auto-claude (기본값)",
+    "autoNameTerminals": "터미널 이름 자동 지정",
+    "autoNameTerminalsDescription": "AI를 사용하여 활동을 기반으로 터미널 탭에 설명적인 이름 생성"
+  },
+  "theme": {
+    "title": "외관",
+    "description": "Auto Claude의 모양 사용자 지정",
+    "mode": "모드",
+    "modeDescription": "라이트와 다크 테마 선택",
+    "light": "라이트",
+    "dark": "다크",
+    "system": "시스템",
+    "colorTheme": "색상 테마",
+    "colorThemeDescription": "선호하는 색상 팔레트 선택"
+  },
+  "devtools": {
+    "title": "개발자 도구",
+    "description": "워크트리 작업에 선호하는 IDE 및 터미널 구성",
+    "detecting": "설치된 도구 감지 중...",
+    "detectAgain": "다시 감지",
+    "ide": {
+      "label": "선호 IDE",
+      "description": "Auto Claude가 이 편집기에서 워크트리를 엽니다",
+      "placeholder": "IDE 선택...",
+      "customPath": "사용자 지정 IDE 경로",
+      "customPathPlaceholder": "/path/to/your/ide"
+    },
+    "terminal": {
+      "label": "선호 터미널",
+      "description": "Auto Claude가 여기에서 터미널 세션을 엽니다",
+      "placeholder": "터미널 선택...",
+      "customPath": "사용자 지정 터미널 경로",
+      "customPathPlaceholder": "/path/to/your/terminal"
+    },
+    "detected": "감지됨",
+    "notInstalled": "설치되지 않음",
+    "detectedSummary": "시스템에서 감지됨:",
+    "noToolsDetected": "추가 도구가 감지되지 않음 (VS Code 및 시스템 터미널이 사용됩니다)"
+  },
+  "updates": {
+    "title": "업데이트",
+    "description": "Auto Claude 업데이트 관리",
+    "appUpdateReady": "앱 업데이트 준비됨",
+    "newVersion": "새 버전",
+    "released": "출시됨",
+    "downloading": "다운로드 중...",
+    "updateDownloaded": "업데이트가 다운로드되었습니다! 설치를 클릭하여 다시 시작하고 업데이트를 적용하세요.",
+    "installAndRestart": "설치 및 재시작",
+    "downloadUpdate": "업데이트 다운로드",
+    "version": "버전",
+    "loading": "로딩 중...",
+    "checkingForUpdates": "업데이트 확인 중...",
+    "newVersionAvailable": "새 버전 사용 가능:",
+    "latestVersion": "최신 버전을 사용하고 있습니다.",
+    "viewRelease": "GitHub에서 전체 릴리스 보기",
+    "unableToCheck": "업데이트를 확인할 수 없습니다",
+    "checkForUpdates": "업데이트 확인",
+    "autoUpdateProjects": "프로젝트 자동 업데이트",
+    "autoUpdateProjectsDescription": "새 버전이 출시되면 프로젝트의 Auto Claude를 자동으로 업데이트",
+    "betaUpdates": "베타 업데이트",
+    "betaUpdatesDescription": "새로운 기능이 포함된 사전 릴리스 베타 버전 받기 (덜 안정적일 수 있음)",
+    "stableDowngradeAvailable": "안정 버전 사용 가능",
+    "stableDowngradeDescription": "현재 베타 버전을 사용하고 있습니다. 베타 업데이트를 비활성화했으므로 최신 안정 릴리스로 전환할 수 있습니다.",
+    "stableVersion": "안정 버전",
+    "downloadStableVersion": "안정 버전 다운로드"
+  },
+  "notifications": {
+    "title": "알림",
+    "description": "기본 알림 설정 구성",
+    "onTaskComplete": "작업 완료 시",
+    "onTaskCompleteDescription": "작업이 성공적으로 완료되면 알림",
+    "onTaskFailed": "작업 실패 시",
+    "onTaskFailedDescription": "작업에 오류가 발생하면 알림",
+    "onReviewNeeded": "검토 필요 시",
+    "onReviewNeededDescription": "QA가 검토를 요청하면 알림",
+    "sound": "소리",
+    "soundDescription": "알림과 함께 소리 재생"
+  },
+  "actions": {
+    "save": "설정 저장",
+    "rerunWizard": "마법사 다시 실행",
+    "rerunWizardDescription": "설정 마법사를 다시 시작"
+  },
+  "projectSections": {
+    "general": {
+      "title": "일반",
+      "description": "Auto-Build 및 에이전트 구성",
+      "useClaudeMd": "CLAUDE.md 사용",
+      "useClaudeMdDescription": "에이전트 컨텍스트에 CLAUDE.md 지침 포함"
+    },
+    "claude": {
+      "title": "Claude 인증",
+      "description": "Claude 인증"
+    },
+    "linear": {
+      "title": "Linear",
+      "description": "Linear 연동",
+      "integrationTitle": "Linear 연동",
+      "integrationDescription": "이슈 추적 및 작업 가져오기를 위해 Linear에 연결",
+      "syncDescription": "이슈 추적을 위해 Linear와 동기화"
+    },
+    "github": {
+      "title": "GitHub",
+      "description": "GitHub 이슈 동기화",
+      "integrationTitle": "GitHub 연동",
+      "integrationDescription": "이슈 추적을 위해 GitHub에 연결",
+      "syncDescription": "GitHub Issues와 동기화"
+    },
+    "gitlab": {
+      "title": "GitLab",
+      "description": "GitLab 이슈 동기화",
+      "integrationTitle": "GitLab 연동",
+      "integrationDescription": "이슈 추적을 위해 GitLab에 연결",
+      "syncDescription": "GitLab Issues와 동기화"
+    },
+    "memory": {
+      "title": "메모리",
+      "description": "Graphiti 메모리 백엔드",
+      "integrationTitle": "메모리",
+      "integrationDescription": "에이전트를 위한 영구적인 크로스 세션 메모리 구성",
+      "syncDescription": "영구 메모리 구성"
+    }
+  },
+  "agentProfile": {
+    "label": "에이전트 프로필",
+    "title": "기본 에이전트 프로필",
+    "sectionDescription": "모델 및 사고 레벨에 대한 프리셋 구성 선택",
+    "profilesInfo": "에이전트 프로필은 Claude 모델 및 사고 레벨에 대한 프리셋 구성을 제공합니다. 새 작업을 만들 때 이 설정이 기본값으로 사용됩니다. 작업 생성 마법사에서 언제든지 재정의할 수 있습니다.",
+    "custom": "사용자 지정",
+    "customConfiguration": "사용자 지정 구성",
+    "customDescription": "모델 및 사고 레벨 선택",
+    "phaseConfiguration": "단계 구성",
+    "phaseConfigurationDescription": "각 단계에 대한 모델 및 사고 레벨 사용자 지정",
+    "clickToCustomize": "클릭하여 사용자 지정",
+    "model": "모델",
+    "thinking": "사고",
+    "thinkingLevel": "사고 레벨",
+    "selectModel": "모델 선택",
+    "selectThinkingLevel": "사고 레벨 선택",
+    "perPhaseOptimization": "(단계별 최적화)",
+    "resetToDefaults": "기본값으로 재설정",
+    "resetToProfileDefaults": "{{profile}} 기본값으로 재설정",
+    "customized": "사용자 지정됨",
+    "phaseConfigNote": "이 설정은 이 프로필로 새 작업을 만들 때 기본값으로 사용됩니다. 작업 생성 마법사에서 작업별로 재정의할 수 있습니다.",
+    "phases": {
+      "spec": {
+        "label": "스펙 생성",
+        "description": "발견, 요구사항, 컨텍스트 수집"
+      },
+      "planning": {
+        "label": "계획",
+        "description": "구현 계획 및 아키텍처"
+      },
+      "coding": {
+        "label": "코딩",
+        "description": "실제 코드 구현"
+      },
+      "qa": {
+        "label": "QA 검토",
+        "description": "품질 보증 및 검증"
+      }
+    }
+  },
+  "workspace": {
+    "roles": {
+      "backend": "백엔드",
+      "frontend": "프론트엔드",
+      "mobile": "모바일",
+      "shared": "공유",
+      "apiGateway": "API 게이트웨이",
+      "worker": "워커",
+      "other": "기타"
+    }
+  },
+  "integrations": {
+    "title": "연동",
+    "description": "Claude 계정 및 API 키 관리",
+    "claudeAccounts": "Claude 계정",
+    "claudeAccountsDescription": "여러 Claude 구독을 추가하여 사용량 제한에 도달했을 때 자동으로 전환합니다.",
+    "noAccountsYet": "아직 구성된 계정이 없습니다",
+    "default": "기본",
+    "active": "활성",
+    "authenticated": "인증됨",
+    "needsAuth": "인증 필요",
+    "authenticate": "인증",
+    "setActive": "활성으로 설정",
+    "manualTokenEntry": "수동 토큰 입력",
+    "runSetupToken": "토큰을 얻으려면 claude setup-token을 실행하세요",
+    "tokenPlaceholder": "sk-ant-oat01-...",
+    "emailPlaceholder": "이메일 (선택사항, 표시용)",
+    "saveToken": "토큰 저장",
+    "accountNamePlaceholder": "계정 이름 (예: 회사, 개인)",
+    "autoSwitching": "자동 계정 전환",
+    "autoSwitchingDescription": "중단을 피하기 위해 Claude 계정 간에 자동 전환합니다. 제한에 도달하기 전에 전환하기 위해 사전 모니터링을 구성합니다.",
+    "enableAutoSwitching": "자동 전환 활성화",
+    "masterSwitch": "모든 자동 전환 기능의 마스터 스위치",
+    "proactiveMonitoring": "사전 모니터링",
+    "proactiveDescription": "정기적으로 사용량을 확인하고 제한에 도달하기 전에 전환",
+    "checkUsageEvery": "사용량 확인 간격",
+    "seconds15": "15초",
+    "seconds30": "30초 (권장)",
+    "minute1": "1분",
+    "disabled": "비활성화됨",
+    "sessionThreshold": "세션 사용량 임계값",
+    "sessionThresholdDescription": "세션 사용량이 이 레벨에 도달하면 전환 (권장: 95%)",
+    "weeklyThreshold": "주간 사용량 임계값",
+    "weeklyThresholdDescription": "주간 사용량이 이 레벨에 도달하면 전환 (권장: 99%)",
+    "reactiveRecovery": "반응적 복구",
+    "reactiveDescription": "예상치 못한 사용량 제한 발생 시 자동 전환",
+    "apiKeys": "API 키",
+    "apiKeysInfo": "여기에 설정된 키가 기본값으로 사용됩니다. 개별 프로젝트는 설정에서 이를 재정의할 수 있습니다.",
+    "openaiKey": "OpenAI API 키",
+    "openaiKeyDescription": "Graphiti 메모리 백엔드에 필요 (임베딩)",
+    "toast": {
+      "authSuccess": "프로필 인증됨",
+      "authSuccessWithEmail": "{{email}}로 연결됨",
+      "authSuccessGeneric": "인증 완료. 이제 이 프로필을 사용할 수 있습니다.",
+      "authStartFailed": "인증 실패",
+      "addProfileFailed": "프로필 추가 실패",
+      "tokenSaved": "토큰 저장됨",
+      "tokenSavedDescription": "토큰이 성공적으로 저장되었습니다.",
+      "tokenSaveFailed": "토큰 저장 실패",
+      "settingsUpdateFailed": "설정 업데이트 실패",
+      "tryAgain": "다시 시도해 주세요."
+    }
+  },
+  "debug": {
+    "title": "디버그 및 로그",
+    "description": "문제 해결을 위한 로그 및 디버그 정보 액세스",
+    "errorReporting": {
+      "label": "익명 오류 보고",
+      "description": "Auto Claude 개선을 위해 충돌 보고서를 보냅니다. 개인 데이터나 코드는 수집되지 않습니다."
+    },
+    "openLogsFolder": "로그 폴더 열기",
+    "copyDebugInfo": "디버그 정보 복사",
+    "copied": "복사됨!",
+    "loadInfo": "디버그 정보 로드",
+    "systemInfo": "시스템 정보",
+    "logsLocation": "로그 위치",
+    "recentErrors": "최근 오류",
+    "noRecentErrors": "최근 오류 없음",
+    "helpTitle": "문제 보고",
+    "helpText": "버그를 보고할 때 \"디버그 정보 복사\"를 클릭하여 문제를 진단하는 데 도움이 되는 시스템 정보 및 최근 오류를 가져오세요."
+  },
+  "projectSettings": {
+    "noProjectSelected": {
+      "title": "선택된 프로젝트 없음",
+      "description": "설정을 구성하려면 사이드바에서 프로젝트를 선택하세요."
+    }
+  },
+  "mcp": {
+    "title": "MCP 서버 개요",
+    "titleWithProject": "{{projectName}}의 MCP 서버 개요",
+    "description": "이 프로젝트에서 에이전트가 사용할 수 있는 MCP 서버 구성",
+    "descriptionNoProject": "MCP 서버를 구성하려면 프로젝트를 선택하세요",
+    "serversEnabled": "{{count}}개 서버 활성화됨",
+    "configuration": "MCP 서버 구성",
+    "configurationHint": "비활성화된 서버는 컨텍스트 사용량과 시작 시간을 줄입니다",
+    "noProjectSelected": "선택된 프로젝트 없음",
+    "noProjectSelectedDescription": "MCP 서버를 보고 구성하려면 드롭다운에서 프로젝트를 선택하세요.",
+    "projectNotInitialized": "프로젝트가 초기화되지 않음",
+    "projectNotInitializedDescription": "MCP 서버를 구성하려면 이 프로젝트에 Auto Claude를 초기화하세요.",
+    "browserAutomation": "브라우저 자동화 (QA 에이전트 전용)",
+    "alwaysEnabled": "항상 활성화됨",
+    "addServer": "서버 추가",
+    "addMcpTo": "{{agent}}에 MCP 서버 추가",
+    "addMcpDescription": "이 에이전트에 추가할 MCP 서버 선택",
+    "allMcpsAdded": "사용 가능한 모든 MCP 서버가 이미 추가되었습니다",
+    "added": "추가됨",
+    "removed": "제거됨",
+    "remove": "제거",
+    "restore": "복원",
+    "noMcpServers": "MCP 서버 없음",
+    "cannotRemove": "제거 불가 (필수)",
+    "servers": {
+      "context7": {
+        "name": "Context7",
+        "description": "라이브러리 문서 조회"
+      },
+      "graphiti": {
+        "name": "Graphiti 메모리",
+        "description": "크로스 세션 컨텍스트를 위한 지식 그래프",
+        "notConfigured": "메모리 구성 필요 (메모리 설정 참조)"
+      },
+      "linear": {
+        "name": "Linear",
+        "description": "프로젝트 관리 연동",
+        "notConfigured": "Linear 연동 필요 (Linear 설정 참조)"
+      },
+      "electron": {
+        "name": "Electron",
+        "description": "Chrome DevTools를 통한 데스크톱 앱 자동화"
+      },
+      "puppeteer": {
+        "name": "Puppeteer",
+        "description": "테스트를 위한 웹 브라우저 자동화"
+      },
+      "autoClaude": {
+        "name": "Auto-Claude 도구",
+        "description": "빌드 진행 추적"
+      }
+    },
+    "customServers": "사용자 지정 서버",
+    "addCustomServer": "사용자 지정 서버 추가",
+    "editCustomServer": "사용자 지정 서버 편집",
+    "customServerDescription": "명령 기반 또는 HTTP 기반 MCP 서버 추가",
+    "serverType": "서버 유형",
+    "typeCommand": "명령 (npx/npm)",
+    "typeHttp": "HTTP",
+    "serverName": "이름",
+    "serverNamePlaceholder": "내 MCP 서버",
+    "serverDescription": "설명",
+    "serverDescriptionPlaceholder": "이 서버가 하는 일",
+    "command": "명령",
+    "args": "인수",
+    "argsHint": "공백으로 구분된 인수",
+    "url": "URL",
+    "headers": "헤더",
+    "headerName": "헤더 이름",
+    "headerValue": "헤더 값",
+    "noCustomServers": "구성된 사용자 지정 서버가 없습니다. 에이전트와 함께 사용할 서버를 추가하세요.",
+    "errorNameRequired": "서버 이름이 필요합니다",
+    "errorIdExists": "이 ID를 가진 서버가 이미 존재합니다",
+    "errorCommandRequired": "명령 기반 서버에는 명령이 필요합니다",
+    "errorUrlRequired": "HTTP 기반 서버에는 URL이 필요합니다",
+    "testConnection": "테스트",
+    "testing": "테스트 중...",
+    "authToken": "인증 토큰",
+    "authTokenPlaceholder": "API 토큰 또는 PAT를 여기에 붙여넣기",
+    "authTokenHint": "Authorization 헤더에서 Bearer 토큰으로 사용됨",
+    "advancedHeaders": "추가 헤더",
+    "status": {
+      "healthy": "서버가 응답 중입니다",
+      "unhealthy": "서버가 응답하지 않습니다",
+      "needsAuth": "인증 필요",
+      "checking": "확인 중...",
+      "unknown": "상태 알 수 없음"
+    },
+    "hints": {
+      "github": "이것은 GitHub MCP 서버처럼 보입니다. 적절한 스코프가 있는 개인 액세스 토큰이 필요합니다.",
+      "createGithubPat": "GitHub PAT 생성",
+      "google": "이것은 Google API처럼 보입니다. OAuth 토큰 또는 API 키가 필요합니다.",
+      "createGoogleToken": "Google 자격 증명 생성",
+      "anthropic": "이것은 Anthropic API처럼 보입니다. API 키가 필요합니다.",
+      "createAnthropicKey": "Anthropic API 키 생성",
+      "openai": "이것은 OpenAI API처럼 보입니다. API 키가 필요합니다.",
+      "createOpenaiKey": "OpenAI API 키 생성"
+    }
+  }
+}

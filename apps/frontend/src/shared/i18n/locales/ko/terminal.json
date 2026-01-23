@@ -1,0 +1,38 @@
+{
+  "expand": {
+    "expand": "터미널 확장",
+    "collapse": "터미널 축소"
+  },
+  "auth": {
+    "terminalTitle": "인증: {{profileName}}",
+    "maxTerminalsReached": "인증 터미널을 열 수 없습니다: 최대 터미널 수에 도달했습니다. 먼저 터미널을 닫으세요."
+  },
+  "worktree": {
+    "create": "워크트리",
+    "createNew": "새 워크트리",
+    "existing": "기존 워크트리",
+    "createTitle": "터미널 워크트리 생성",
+    "createDescription": "이 터미널을 위한 격리된 작업 공간을 생성합니다. 모든 작업은 워크트리 디렉토리에서 수행됩니다.",
+    "name": "워크트리 이름",
+    "namePlaceholder": "my-feature",
+    "nameRequired": "워크트리 이름이 필요합니다",
+    "nameInvalid": "이름은 문자 또는 숫자로 시작하고 끝나야 합니다",
+    "nameHelp": "소문자, 숫자, 대시 및 밑줄 (공백은 하이픈이 됩니다)",
+    "associateTask": "작업에 연결",
+    "selectTask": "작업 선택...",
+    "noTask": "작업 없음 (독립 워크트리)",
+    "createBranch": "Git 브랜치 생성",
+    "branchHelp": "브랜치 생성: {{branch}}",
+    "baseBranch": "기본 브랜치",
+    "selectBaseBranch": "기본 브랜치 선택...",
+    "searchBranch": "브랜치 검색...",
+    "noBranchFound": "브랜치를 찾을 수 없음",
+    "useProjectDefault": "프로젝트 기본값 사용 ({{branch}})",
+    "baseBranchHelp": "워크트리를 생성할 브랜치",
+    "openInIDE": "IDE에서 열기",
+    "maxReached": "최대 12개의 터미널 워크트리에 도달했습니다",
+    "alreadyExists": "이 이름의 워크트리가 이미 존재합니다",
+    "deleteTitle": "워크트리 삭제?",
+    "deleteDescription": "워크트리와 브랜치가 영구적으로 삭제됩니다. 커밋되지 않은 변경사항은 손실됩니다."
+  }
+}
