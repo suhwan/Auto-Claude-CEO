@@ -1739,7 +1739,8 @@ ${plan.objectiveOutput || 'Implementation complete with all tasks done.'}
   }
 
   /**
-   * Sync entire phase to kanban
+   * Sync entire phase to kanban as ONE task
+   * Each Phase becomes one Task, Plans become subtasks
    */
   async syncPhaseToKanban(phaseNumber: number): Promise<GsdSyncResult> {
     const roadmap = await this.getRoadmap();
@@ -1752,22 +1753,107 @@ ${plan.objectiveOutput || 'Implementation complete with all tasks done.'}
       };
     }
 
-    const allTasks: GsdTask[] = [];
-
-    for (const plan of phase.plans) {
-      if (plan.path && fs.existsSync(path.join(this.projectPath, plan.path))) {
-        const result = await this.syncPlanToKanban(plan.path);
-        if (result.success && result.tasks) {
-          allTasks.push(...result.tasks);
-        }
+    try {
+      // Create spec directory
+      const autoClaudeDir = path.join(this.projectPath, '.auto-claude', 'specs');
+      if (!fs.existsSync(autoClaudeDir)) {
+        fs.mkdirSync(autoClaudeDir, { recursive: true });
       }
-    }
 
-    return {
-      success: true,
-      tasks: allTasks,
-      task_count: allTasks.length
-    };
+      // Generate spec ID: P01-foundation, P02-architecture, etc.
+      const phaseStr = String(phaseNumber).padStart(2, '0');
+      const specId = `P${phaseStr}-${this.slugify(phase.name)}`;
+      const specDir = path.join(autoClaudeDir, specId);
+
+      // Create or update spec directory
+      if (!fs.existsSync(specDir)) {
+        fs.mkdirSync(specDir, { recursive: true });
+      }
+
+      // Determine task status from phase status
+      let taskStatus = 'pending';
+      if (phase.status === 'complete') {
+        taskStatus = 'done';
+      } else if (phase.status === 'in_progress') {
+        taskStatus = 'in_progress';
+      }
+
+      // Create subtasks from plans
+      const subtasks = phase.plans.map((plan, idx) => ({
+        id: `${specId}-plan-${idx + 1}`,
+        description: plan.name,
+        status: plan.status === 'complete' ? 'completed' :
+                plan.status === 'in_progress' ? 'in_progress' : 'pending',
+        files_to_modify: [] as string[]
+      }));
+
+      // Create spec.md
+      const specContent = `# Phase ${phaseNumber}: ${phase.name}
+
+## Overview
+${phase.goal}
+
+## Status
+- Phase Status: ${phase.status}
+- Completed Plans: ${phase.completed_plans}/${phase.total_plans}
+
+## Plans
+${phase.plans.map(p => `- [${p.status === 'complete' ? 'x' : ' '}] ${p.name}`).join('\n')}
+`;
+      fs.writeFileSync(path.join(specDir, 'spec.md'), specContent);
+
+      // Create implementation_plan.json
+      const implementationPlan = {
+        feature: `Phase ${phaseNumber}: ${phase.name}`,
+        description: phase.goal,
+        status: taskStatus,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        phases: [{
+          name: phase.name,
+          subtasks: subtasks
+        }],
+        metadata: {
+          source: 'gsd',
+          phase_number: phaseNumber,
+          phase_status: phase.status
+        }
+      };
+      fs.writeFileSync(path.join(specDir, 'implementation_plan.json'), JSON.stringify(implementationPlan, null, 2));
+
+      logger.info(`Synced Phase ${phaseNumber} to Kanban: ${specId} with ${subtasks.length} plans as subtasks`);
+
+      return {
+        success: true,
+        tasks: [{
+          id: specId,
+          title: `Phase ${phaseNumber}: ${phase.name}`,
+          description: phase.goal,
+          status: taskStatus,
+          phase: phaseStr,
+          plan: '0',
+          task_number: phaseNumber,
+          files: [],
+          action: phase.goal,
+          verify: '',
+          done_criteria: '',
+          gsd_task_type: 'phase',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: {
+            source: 'gsd',
+            phase_number: phaseNumber
+          }
+        }],
+        task_count: 1
+      };
+    } catch (error) {
+      logger.error(`Failed to sync Phase ${phaseNumber} to Kanban:`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   /**
