@@ -378,6 +378,19 @@ export function App() {
       restoreTerminalSessions(selectedProject.path).catch((err) => {
         console.error('[App] Failed to restore sessions:', err);
       });
+
+      // Auto-sync GSD plans to main Kanban board when project loads
+      window.electronAPI.gsd?.syncToKanban(selectedProject.path)
+        .then((result) => {
+          if (result.success && result.data && result.data.totalSynced > 0) {
+            console.log(`[GSD] Auto-synced ${result.data.totalSynced} tasks to Kanban on project load`);
+            // Reload tasks to show GSD tasks in Kanban
+            loadTasks(currentProjectId);
+          }
+        })
+        .catch((err) => {
+          console.warn('[GSD] Auto-sync to Kanban failed:', err);
+        });
     }
   }, [activeProjectId, selectedProjectId, selectedProject?.path, selectedProject?.name]);
 

@@ -92,6 +92,17 @@ export function GsdView({ projectPath }: GsdViewProps) {
         if (roadmapResult.data.current_phase) {
           setExpandedPhases(new Set([roadmapResult.data.current_phase]));
         }
+
+        // Auto-sync GSD plans to main Kanban board
+        try {
+          const syncResult = await window.electronAPI.gsd.syncToKanban(projectPath);
+          if (syncResult.success && syncResult.data) {
+            console.log(`[GSD] Auto-synced ${syncResult.data.totalSynced} tasks to Kanban`);
+          }
+        } catch (syncError) {
+          // Don't fail the whole load if sync fails
+          console.warn('[GSD] Auto-sync to Kanban failed:', syncError);
+        }
       } else {
         setError(roadmapResult.error || 'Failed to load roadmap');
       }
