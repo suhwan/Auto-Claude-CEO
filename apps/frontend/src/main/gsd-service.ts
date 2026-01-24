@@ -1191,8 +1191,10 @@ export class GsdService {
 
         if (planFilePath) {
           const taskInfo = this.countPlanTasks(planFilePath);
+          // Return relative path from project root
+          const relativePath = path.relative(this.projectPath, planFilePath);
           return {
-            path: planFilePath,
+            path: relativePath,
             tasks: taskInfo.total,
             completed: taskInfo.completed
           };
@@ -1202,8 +1204,9 @@ export class GsdService {
         const summaryFilePath = path.join(fullPhaseDir, subDir.name, `${planId}-SUMMARY.md`);
         if (fs.existsSync(summaryFilePath)) {
           // If summary exists, plan is complete
+          const relativePath = path.relative(this.projectPath, summaryFilePath);
           return {
-            path: summaryFilePath,
+            path: relativePath,
             tasks: 1,
             completed: 1
           };
@@ -1290,8 +1293,11 @@ export class GsdService {
         fs.mkdirSync(autoClaudeDir, { recursive: true });
       }
 
-      // Generate spec ID from plan info (e.g., "01-02-implement-feature")
-      const specId = `${parsedPlan.phase}-${String(parsedPlan.planNumber).padStart(2, '0')}-${this.slugify(parsedPlan.objectiveTitle)}`;
+      // Generate spec ID from plan info (e.g., "P01-02-implement-feature")
+      // Use "P" prefix for GSD phases, zero-pad both phase and plan numbers for proper sorting
+      const phaseStr = String(parsedPlan.phase).padStart(2, '0');
+      const planStr = String(parsedPlan.planNumber).padStart(2, '0');
+      const specId = `P${phaseStr}-${planStr}-${this.slugify(parsedPlan.objectiveTitle)}`;
       const specDir = path.join(autoClaudeDir, specId);
 
       // Check if spec already exists
