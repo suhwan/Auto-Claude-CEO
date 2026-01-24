@@ -11,6 +11,7 @@ import { GsdService, RoadmapGenerator, PlanGenerator, ChatGenerator, GenerateRoa
 import { GsdDependencyAnalyzer } from '../gsd-dependency-analyzer';
 import { GsdParallelExecutor, TaskProgress, PhaseExecutionResult } from '../gsd-parallel-executor';
 import { logger } from '../app-logger';
+import { projectStore } from '../project-store';
 
 // Project-based GSD Service instance cache
 const gsdServiceCache = new Map<string, GsdService>();
@@ -102,6 +103,15 @@ export function setupGsdHandlers(): void {
         logger.info('gsd:syncPlanToKanban', { projectPath, planPath });
         const gsdService = getGsdService(projectPath);
         const result = await gsdService.syncPlanToKanban(planPath);
+
+        // Invalidate cache so new tasks show up
+        if (result.success && result.task_count && result.task_count > 0) {
+          const project = projectStore.getProjects().find(p => p.path === projectPath);
+          if (project) {
+            projectStore.invalidateTasksCache(project.id);
+          }
+        }
+
         return { success: true, data: result };
       } catch (error) {
         logger.error('gsd:syncPlanToKanban failed:', error);
@@ -120,6 +130,15 @@ export function setupGsdHandlers(): void {
         logger.info('gsd:syncPhaseToKanban', { projectPath, phaseNumber });
         const gsdService = getGsdService(projectPath);
         const result = await gsdService.syncPhaseToKanban(phaseNumber);
+
+        // Invalidate cache so new tasks show up
+        if (result.success && result.task_count && result.task_count > 0) {
+          const project = projectStore.getProjects().find(p => p.path === projectPath);
+          if (project) {
+            projectStore.invalidateTasksCache(project.id);
+          }
+        }
+
         return { success: true, data: result };
       } catch (error) {
         logger.error('gsd:syncPhaseToKanban failed:', error);
@@ -676,6 +695,15 @@ export function setupGsdHandlers(): void {
               phaseNumber: phase.number,
               taskCount: result.task_count
             });
+          }
+        }
+
+        // Invalidate project tasks cache so new tasks are picked up
+        if (totalSynced > 0) {
+          const project = projectStore.getProjects().find(p => p.path === projectPath);
+          if (project) {
+            projectStore.invalidateTasksCache(project.id);
+            logger.info(`Invalidated tasks cache for project ${project.id} after syncing ${totalSynced} GSD tasks`);
           }
         }
 
