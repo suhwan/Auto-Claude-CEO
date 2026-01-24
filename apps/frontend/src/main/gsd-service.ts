@@ -1722,11 +1722,18 @@ ${plan.objectiveOutput || 'Implementation complete with all tasks done.'}
 
   /**
    * Create URL-safe slug from string
+   * Preserves Korean characters (Hangul) and common characters
    */
   private slugify(text: string): string {
     return text
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      // Keep alphanumeric, Korean Hangul (가-힣), and spaces/hyphens
+      .replace(/[^a-z0-9가-힣\s-]+/g, '')
+      // Replace spaces with hyphens
+      .replace(/\s+/g, '-')
+      // Remove multiple consecutive hyphens
+      .replace(/-+/g, '-')
+      // Remove leading/trailing hyphens
       .replace(/^-|-$/g, '')
       .substring(0, 50);
   }
