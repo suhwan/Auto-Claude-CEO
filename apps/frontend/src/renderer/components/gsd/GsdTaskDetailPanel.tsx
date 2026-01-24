@@ -1,21 +1,22 @@
 /**
- * GsdTaskDetailPanel - Task detail slide-out panel
+ * GSD Task Detail Panel
  *
- * Shows task metadata and provides Plan/Research/Execute actions
- * with real-time terminal output.
+ * Slide-out panel showing task details with Plan, Research, and Execute actions.
+ * Displays real-time terminal output during execution.
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, FileText, Search, Play, Square, ExternalLink } from 'lucide-react';
+import { X, Play, Search, FileCode, Loader2, StopCircle, GitBranch, Shield } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { TerminalOutput } from './TerminalOutput';
 import type { GsdConvertedTask } from '../../../preload/api/modules/gsd-api';
+import { cn } from '../../lib/utils';
 
-// Extended task type with plan/summary paths
+// Extended task type with metadata
 export interface GsdTaskWithMeta extends GsdConvertedTask {
   planPath?: string;
   summaryPath?: string;
@@ -37,147 +38,203 @@ export function GsdTaskDetailPanel({
   onTaskUpdate
 }: GsdTaskDetailPanelProps) {
   const { t } = useTranslation(['tasks', 'common']);
-  const [output, setOutput] = useState('');
+
+  const [output, setOutput] = useState<string[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [currentAction, setCurrentAction] = useState<ActionType>(null);
 
-  // Clean up event listeners on unmount
+  // Cleanup event listeners on unmount
   useEffect(() => {
-    const handleOutput = (_event: unknown, data: { output: string }) => {
-      setOutput(prev => prev + data.output);
-    };
-
-    const handleComplete = () => {
-      setIsRunning(false);
-      setCurrentAction(null);
-    };
-
-    const handleError = (_event: unknown, data: { error: string }) => {
-      setOutput(prev => prev + `\nError: ${data.error}`);
-      setIsRunning(false);
-      setCurrentAction(null);
-    };
-
-    // Subscribe to events
-    window.electronAPI?.gsd?.onPlanOutput?.(handleOutput);
-    window.electronAPI?.gsd?.onExecuteOutput?.(handleOutput);
-    window.electronAPI?.gsd?.onPlanComplete?.(handleComplete);
-    window.electronAPI?.gsd?.onExecuteComplete?.(handleComplete);
-    window.electronAPI?.gsd?.onPlanError?.(handleError);
-    window.electronAPI?.gsd?.onExecuteError?.(handleError);
-
     return () => {
-      // Cleanup listeners would go here if the API supports it
+      // Cleanup any listeners
+      if (window.electronAPI?.gsd) {
+        // Listeners are automatically cleaned up when component unmounts
+      }
     };
   }, []);
 
+  // Handle Plan action
   const handlePlan = useCallback(async () => {
     if (isRunning) return;
+
     setIsRunning(true);
     setCurrentAction('plan');
-    setOutput(`Planning phase ${task.phaseNumber}...\n\n`);
+    setOutput([`Starting plan for Phase ${task.phaseNumber}...`]);
 
     try {
-      await window.electronAPI?.gsd?.planPhase?.(projectPath, task.phaseNumber, task.phaseName);
+      // Setup event listeners
+      const removeOutputListener = window.electronAPI.gsd.onPlanOutput((_event, line) => {
+        setOutput(prev => [...prev, line]);
+      });
+
+      const removeCompleteListener = window.electronAPI.gsd.onPlanComplete((_event, success) => {
+        setOutput(prev => [...prev, success ? '✓ Plan completed successfully' : '✗ Plan failed']);
+        setIsRunning(false);
+        setCurrentAction(null);
+        removeOutputListener();
+        removeCompleteListener();
+
+        if (success) {
+          onTaskUpdate({ ...task, status: 'in_progress' });
+        }
+      });
+
+      await window.electronAPI.gsd.planPhase(projectPath, {
+        phaseNumber: task.phaseNumber
+      });
     } catch (error) {
-      setOutput(prev => prev + `\nFailed to start planning: ${error}`);
+      setOutput(prev => [...prev, `Error: ${error}`]);
       setIsRunning(false);
       setCurrentAction(null);
     }
-  }, [isRunning, projectPath, task.phaseNumber, task.phaseName]);
+  }, [task, projectPath, isRunning, onTaskUpdate]);
 
+  // Handle Research action
   const handleResearch = useCallback(async () => {
     if (isRunning) return;
+
     setIsRunning(true);
     setCurrentAction('research');
-    setOutput(`Researching phase ${task.phaseNumber}...\n\n`);
+    setOutput([`Starting research for Phase ${task.phaseNumber}...`]);
 
     try {
-      await window.electronAPI?.gsd?.researchPhase?.(projectPath, task.phaseNumber);
+      const removeOutputListener = window.electronAPI.gsd.onPlanOutput((_event, line) => {
+        setOutput(prev => [...prev, line]);
+      });
+
+      const removeCompleteListener = window.electronAPI.gsd.onPlanComplete((_event, success) => {
+        setOutput(prev => [...prev, success ? '✓ Research completed successfully' : '✗ Research failed']);
+        setIsRunning(false);
+        setCurrentAction(null);
+        removeOutputListener();
+        removeCompleteListener();
+      });
+
+      await window.electronAPI.gsd.researchPhase(projectPath, {
+        phaseNumber: task.phaseNumber
+      });
     } catch (error) {
-      setOutput(prev => prev + `\nFailed to start research: ${error}`);
+      setOutput(prev => [...prev, `Error: ${error}`]);
       setIsRunning(false);
       setCurrentAction(null);
     }
-  }, [isRunning, projectPath, task.phaseNumber]);
+  }, [task, projectPath, isRunning]);
 
+  // Handle Execute action
   const handleExecute = useCallback(async () => {
     if (isRunning || !task.planPath) return;
+
     setIsRunning(true);
     setCurrentAction('execute');
-    setOutput(`Executing plan: ${task.planPath}...\n\n`);
+    setOutput([`Executing plan: ${task.planPath}...`]);
 
     try {
-      await window.electronAPI?.gsd?.executePlan?.(projectPath, task.planPath, task.title);
+      const removeOutputListener = window.electronAPI.gsd.onExecuteOutput((_event, line) => {
+        setOutput(prev => [...prev, line]);
+      });
+
+      const removeProgressListener = window.electronAPI.gsd.onExecuteProgress((_event, current, total) => {
+        setOutput(prev => [...prev, `Progress: [${current}/${total}]`]);
+      });
+
+      const removeCompleteListener = window.electronAPI.gsd.onExecuteComplete((_event, success) => {
+        setOutput(prev => [...prev, success ? '✓ Execution completed successfully' : '✗ Execution failed']);
+        setIsRunning(false);
+        setCurrentAction(null);
+        removeOutputListener();
+        removeProgressListener();
+        removeCompleteListener();
+
+        if (success) {
+          onTaskUpdate({ ...task, status: 'complete' });
+        }
+      });
+
+      await window.electronAPI.gsd.executePlan(projectPath, {
+        planPath: task.planPath
+      });
     } catch (error) {
-      setOutput(prev => prev + `\nFailed to start execution: ${error}`);
+      setOutput(prev => [...prev, `Error: ${error}`]);
       setIsRunning(false);
       setCurrentAction(null);
     }
-  }, [isRunning, projectPath, task.planPath, task.title]);
+  }, [task, projectPath, isRunning, onTaskUpdate]);
 
+  // Handle Cancel action
   const handleCancel = useCallback(async () => {
+    if (!isRunning) return;
+
     try {
-      await window.electronAPI?.gsd?.cancelPlan?.();
-      setOutput(prev => prev + '\n\nCancelled by user.');
+      await window.electronAPI.gsd.cancelPlan(projectPath);
+      setOutput(prev => [...prev, '⚠ Operation cancelled by user']);
       setIsRunning(false);
       setCurrentAction(null);
     } catch (error) {
-      console.error('Failed to cancel:', error);
+      setOutput(prev => [...prev, `Error cancelling: ${error}`]);
     }
-  }, []);
+  }, [projectPath, isRunning]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'complete': return 'bg-green-500';
-      case 'in_progress': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
+  // Status badge color
+  const statusColor = {
+    pending: 'bg-zinc-500',
+    in_progress: 'bg-blue-500',
+    complete: 'bg-green-500'
+  }[task.status];
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[500px] bg-background border-l shadow-xl z-50 flex flex-col">
+    <div className="fixed inset-y-0 right-0 w-96 bg-background border-l border-border shadow-xl z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-3">
-          <div className={`w-3 h-3 rounded-full ${getStatusColor(task.status)}`} />
-          <h2 className="font-semibold truncate max-w-[350px]">{task.title}</h2>
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-semibold truncate">{task.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            Phase {task.phaseNumber}, Plan {task.planNumber}
+          </p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-4">
-          {/* Task Info */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">Phase {task.phaseNumber}</Badge>
-              <Badge variant={task.status === 'complete' ? 'default' : 'secondary'}>
-                {task.status}
+      {/* Content */}
+      <ScrollArea className="flex-1 p-4">
+        {/* Status & Metadata */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Badge className={cn(statusColor, 'text-white')}>
+              {task.status.replace('_', ' ')}
+            </Badge>
+            {task.parallelSafe && (
+              <Badge variant="outline" className="gap-1">
+                <Shield className="h-3 w-3" />
+                Parallel Safe
               </Badge>
-              {task.parallel_safe && (
-                <Badge variant="outline" className="text-green-600">
-                  Parallel Safe
-                </Badge>
-              )}
-            </div>
-
-            {task.depends_on && task.depends_on.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Depends on: {task.depends_on.join(', ')}
-              </div>
+            )}
+            {task.dependsOn.length > 0 && (
+              <Badge variant="outline" className="gap-1">
+                <GitBranch className="h-3 w-3" />
+                {task.dependsOn.length} deps
+              </Badge>
             )}
           </div>
 
-          <Separator />
-
           {/* Description */}
-          {task.objective && (
+          <div>
+            <h3 className="text-sm font-medium mb-1">Description</h3>
+            <p className="text-sm text-muted-foreground">{task.description || 'No description'}</p>
+          </div>
+
+          {/* Dependencies */}
+          {task.dependsOn.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium mb-2">Objective</h3>
-              <p className="text-sm text-muted-foreground">{task.objective}</p>
+              <h3 className="text-sm font-medium mb-1">Dependencies</h3>
+              <div className="flex flex-wrap gap-1">
+                {task.dependsOn.map(dep => (
+                  <Badge key={dep} variant="secondary" className="text-xs">
+                    {dep}
+                  </Badge>
+                ))}
+              </div>
             </div>
           )}
 
@@ -186,14 +243,19 @@ export function GsdTaskDetailPanel({
           {/* Action Buttons */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Actions</h3>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handlePlan}
-                disabled={isRunning || task.status === 'complete'}
+                disabled={isRunning}
+                className="gap-1"
               >
-                <FileText className="h-4 w-4 mr-1" />
+                {currentAction === 'plan' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <FileCode className="h-4 w-4" />
+                )}
                 Plan
               </Button>
               <Button
@@ -201,63 +263,55 @@ export function GsdTaskDetailPanel({
                 size="sm"
                 onClick={handleResearch}
                 disabled={isRunning}
+                className="gap-1"
               >
-                <Search className="h-4 w-4 mr-1" />
+                {currentAction === 'research' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Search className="h-4 w-4" />
+                )}
                 Research
               </Button>
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={handleExecute}
                 disabled={isRunning || !task.planPath}
+                className="gap-1"
               >
-                <Play className="h-4 w-4 mr-1" />
+                {currentAction === 'execute' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
                 Execute
               </Button>
-              {isRunning && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleCancel}
-                >
-                  <Square className="h-4 w-4 mr-1" />
-                  Cancel
-                </Button>
-              )}
             </div>
+
+            {isRunning && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleCancel}
+                className="w-full gap-1"
+              >
+                <StopCircle className="h-4 w-4" />
+                Cancel
+              </Button>
+            )}
           </div>
 
           <Separator />
 
           {/* Terminal Output */}
           <div>
-            <h3 className="text-sm font-medium mb-2">
-              Output {currentAction && `(${currentAction})`}
-            </h3>
-            <TerminalOutput output={output} isRunning={isRunning} />
+            <h3 className="text-sm font-medium mb-2">Output</h3>
+            <TerminalOutput
+              output={output}
+              isRunning={isRunning}
+              className="h-48"
+            />
           </div>
-
-          {/* File Links */}
-          {(task.planPath || task.summaryPath) && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Files</h3>
-                {task.planPath && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span>Plan: {task.planPath}</span>
-                  </div>
-                )}
-                {task.summaryPath && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileText className="h-4 w-4" />
-                    <span>Summary: {task.summaryPath}</span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
       </ScrollArea>
     </div>
