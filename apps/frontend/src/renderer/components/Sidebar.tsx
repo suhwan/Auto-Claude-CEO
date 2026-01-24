@@ -21,7 +21,8 @@ import {
   Sparkles,
   GitBranch,
   HelpCircle,
-  Wrench
+  Wrench,
+  ClipboardList
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
@@ -53,7 +54,7 @@ import { RateLimitIndicator } from './RateLimitIndicator';
 import { ClaudeCodeStatusBadge } from './ClaudeCodeStatusBadge';
 import type { Project, AutoBuildVersionInfo, GitStatus, ProjectEnvConfig } from '../../shared/types';
 
-export type SidebarView = 'kanban' | 'terminals' | 'roadmap' | 'context' | 'ideation' | 'github-issues' | 'gitlab-issues' | 'github-prs' | 'gitlab-merge-requests' | 'changelog' | 'insights' | 'worktrees' | 'agent-tools';
+export type SidebarView = 'kanban' | 'terminals' | 'roadmap' | 'context' | 'ideation' | 'github-issues' | 'gitlab-issues' | 'github-prs' | 'gitlab-merge-requests' | 'changelog' | 'insights' | 'worktrees' | 'agent-tools' | 'gsd';
 
 interface SidebarProps {
   onSettingsClick: () => void;
@@ -72,6 +73,7 @@ interface NavItem {
 // Base nav items always shown
 const baseNavItems: NavItem[] = [
   { id: 'kanban', labelKey: 'navigation:items.kanban', icon: LayoutGrid, shortcut: 'K' },
+  { id: 'gsd', labelKey: 'navigation:items.gsd', icon: ClipboardList, shortcut: 'S' },
   { id: 'terminals', labelKey: 'navigation:items.terminals', icon: Terminal, shortcut: 'A' },
   { id: 'insights', labelKey: 'navigation:items.insights', icon: Sparkles, shortcut: 'N' },
   { id: 'roadmap', labelKey: 'navigation:items.roadmap', icon: Map, shortcut: 'D' },
